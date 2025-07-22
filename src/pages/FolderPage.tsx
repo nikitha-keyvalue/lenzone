@@ -121,30 +121,31 @@ export default function FolderPage() {
             <h1 className="text-xl font-bold">{getFolderTitle(folderType)}</h1>
           </div>
           
-          {/* Upload Button */}
-          {!isShared && currentConfig && (
-            <div className="relative">
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*,application/pdf"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={uploading}
-              />
-              <Button disabled={uploading} className="h-10 px-4">
-                <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploading...' : currentConfig.uploadText}
-              </Button>
-            </div>
-          )}
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle>{getFolderTitle(folderType)}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{getFolderTitle(folderType)}</CardTitle>
+              {!isShared && currentConfig && (
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*,application/pdf"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <Button disabled={uploading} className="h-10 px-4">
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploading ? 'Uploading...' : currentConfig.uploadText}
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <FolderView 
