@@ -18,7 +18,7 @@ All colors MUST be HSL.
     --popover: 220 13% 11%;
     --popover-foreground: 220 13% 95%;
 
-    --primary: 47 96% 53%;
+    --primary: 165 80% 49%;
     --primary-foreground: 220 13% 9%;
 
     --secondary: 220 13% 15%;
@@ -35,21 +35,21 @@ All colors MUST be HSL.
 
     --border: 220 13% 18%;
     --input: 220 13% 18%;
-    --ring: 47 96% 53%;
+    --ring: 165 80% 49%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 220 13% 11%;
     --sidebar-foreground: 220 13% 95%;
-    --sidebar-primary: 47 96% 53%;
+    --sidebar-primary: 165 80% 49%;
     --sidebar-primary-foreground: 220 13% 9%;
     --sidebar-accent: 220 13% 15%;
     --sidebar-accent-foreground: 220 13% 95%;
     --sidebar-border: 220 13% 18%;
-    --sidebar-ring: 47 96% 53%;
+    --sidebar-ring: 165 80% 49%;
 
     /* Photography specific colors */
-    --camera-gold: 47 96% 53%;
+    --camera-gold: 165 80% 49%;
     --photo-frame: 220 13% 18%;
     --gallery-bg: 220 13% 13%;
   }
