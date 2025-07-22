@@ -54,15 +54,15 @@ All colors MUST be HSL.
     --gallery-bg: 220 13% 13%;
     
     /* Comment status colors */
-    --warning: 38 92% 50%;
+    --warning: 165 83% 49%;
     --warning-foreground: 220 13% 9%;
-    --warning-muted: 38 100% 97%;
-    --warning-border: 38 100% 87%;
+    --warning-muted: 165 83% 97%;
+    --warning-border: 165 83% 49%;
     
-    --success: 142 76% 36%;
-    --success-foreground: 220 13% 95%;
-    --success-muted: 142 76% 97%;
-    --success-border: 142 76% 87%;
+    --success: 165 83% 49%;
+    --success-foreground: 220 13% 9%;
+    --success-muted: 165 83% 97%;
+    --success-border: 165 83% 49%;
   }
 
   /* Optional light mode override (not used by default) */
@@ -96,15 +96,15 @@ All colors MUST be HSL.
     --sidebar-ring: 47 96% 53%;
     
     /* Comment status colors for light mode */
-    --warning: 38 92% 50%;
+    --warning: 165 83% 49%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 38 100% 97%;
-    --warning-border: 38 100% 87%;
+    --warning-muted: 165 83% 97%;
+    --warning-border: 165 83% 49%;
     
-    --success: 142 76% 36%;
+    --success: 165 83% 49%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 142 76% 97%;
-    --success-border: 142 76% 87%;
+    --success-muted: 165 83% 97%;
+    --success-border: 165 83% 49%;
   }
 }
 
