@@ -67,11 +67,18 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
     fetchFiles();
   }, [clientId, folderType]);
 
-  const getImageUrl = (fileName: string): string => {
-    const { data } = supabase.storage
-      .from(config.bucket)
-      .getPublicUrl(`${clientId}/${fileName}`);
-    return data.publicUrl;
+  const getImageUrl = async (fileName: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase.storage
+        .from(config.bucket)
+        .createSignedUrl(`${clientId}/${fileName}`, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Error creating signed URL:', error);
+      return '';
+    }
   };
 
   const isImageFile = (fileName: string): boolean => {
@@ -91,11 +98,19 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
       if (error) throw error;
       
-      // Add image URLs to files
-      const filesWithUrls = (data || []).map(file => ({
-        ...file,
-        imageUrl: getImageUrl(file.name)
-      }));
+      // Get signed URLs for all image files
+      const filesWithUrls = await Promise.all(
+        (data || []).map(async (file) => {
+          let imageUrl = '';
+          if (isImageFile(file.name)) {
+            imageUrl = await getImageUrl(file.name);
+          }
+          return {
+            ...file,
+            imageUrl
+          };
+        })
+      );
       
       setFiles(filesWithUrls);
     } catch (error) {
