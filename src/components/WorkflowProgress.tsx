@@ -153,11 +153,11 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   };
 
   const isSelectionCompleted = () => {
-    return packageData ? selectedPhotosCount >= packageData.max_edited_photos * 0.6 : false;
+    return selectedPhotosCount > 0;
   };
 
   const isEditingCompleted = () => {
-    return (packageData && finalPhotosCount === selectedPhotosCount) || workflowState.editingManuallyDone;
+    return finalPhotosCount > 0 || workflowState.editingManuallyDone;
   };
 
   const areDeliverablesReady = () => {
@@ -194,7 +194,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
       icon: Camera,
       status: isSelectionCompleted() ? 'done' : 'pending',
       autoChecked: true,
-      tooltip: `Auto-checked when ${packageData?.max_edited_photos ? Math.floor(packageData.max_edited_photos * 0.6) : 60}+ photos selected`
+      tooltip: 'Auto-checked when photos are selected'
     },
     {
       id: 'editing',
