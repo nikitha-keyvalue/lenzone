@@ -41,13 +41,20 @@ export default function ClientDetail() {
     if (!id) return;
     
     try {
+      console.log('Fetching client with ID:', id, 'Is shared:', isShared);
+      
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      console.log('Supabase response:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       setClient(data);
     } catch (error) {
       console.error('Error fetching client:', error);
@@ -56,7 +63,10 @@ export default function ClientDetail() {
         description: "Failed to fetch client details",
         variant: "destructive"
       });
-      navigate('/clients');
+      // Only navigate to clients if not a shared link
+      if (!isShared) {
+        navigate('/clients');
+      }
     } finally {
       setLoading(false);
     }
@@ -113,10 +123,12 @@ export default function ClientDetail() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Client not found</h2>
-          <Button onClick={() => navigate('/clients')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Clients
-          </Button>
+          {!isShared && (
+            <Button onClick={() => navigate('/clients')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Clients
+            </Button>
+          )}
         </div>
       </div>
     );

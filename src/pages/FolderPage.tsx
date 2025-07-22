@@ -28,10 +28,12 @@ export default function FolderPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Invalid folder</h2>
-          <Button onClick={() => navigate('/')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Go Home
-          </Button>
+          {!isShared && (
+            <Button onClick={() => navigate('/')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Home
+            </Button>
+          )}
         </div>
       </div>
     );
