@@ -206,8 +206,8 @@ export default function PhotoCommentsPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-background border-l shadow-lg z-50 flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
+    <div className="fixed inset-y-0 right-0 w-96 bg-card border-l border-border shadow-lg z-50 flex flex-col">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
         <div className="flex items-center space-x-2">
           <MessageCircle className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Comments</h3>
@@ -217,7 +217,7 @@ export default function PhotoCommentsPanel({
         </Button>
       </div>
 
-      <div className="p-4 border-b">
+      <div className="p-4 border-b border-border bg-card">
         <p className="text-sm font-medium truncate" title={photoName}>
           {photoName}
         </p>
@@ -234,7 +234,7 @@ export default function PhotoCommentsPanel({
           </div>
         ) : (
           comments.map((comment) => (
-            <Card key={comment.id} className={comment.resolved_at ? "border-green-200 bg-green-50" : ""}>
+            <Card key={comment.id} className={comment.resolved_at ? "border-success bg-success/5" : ""}>
               <CardContent className="p-3">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
@@ -242,7 +242,7 @@ export default function PhotoCommentsPanel({
                       {comment.commenter_name || 'Anonymous'}
                     </p>
                     {comment.resolved_at && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-success" />
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -251,7 +251,7 @@ export default function PhotoCommentsPanel({
                 </div>
                 <p className="text-sm">{comment.comment}</p>
                 {comment.resolved_at && (
-                  <p className="text-xs text-green-600 mt-2">
+                  <p className="text-xs text-success mt-2">
                     Resolved on {formatDate(comment.resolved_at)}
                   </p>
                 )}
@@ -261,7 +261,7 @@ export default function PhotoCommentsPanel({
         )}
       </div>
 
-      <div className="p-4 border-t space-y-3">
+      <div className="p-4 border-t border-border bg-card space-y-3">
         {isPhotographer && hasUnresolvedComments && (
           <div className="mb-4">
             <Button 
