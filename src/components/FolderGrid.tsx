@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Image, Camera, FolderOpen } from 'lucide-react';
 
 interface FolderGridProps {
-  onFolderClick: (folderType: 'references' | 'all-photos' | 'final-photos') => void;
+  onFolderClick: (folderType: 'references' | 'all-photos' | 'selected-photos' | 'final-photos') => void;
 }
 
 const FOLDERS = [
@@ -25,9 +25,18 @@ const FOLDERS = [
     borderColor: 'border-green-200'
   },
   {
+    id: 'selected-photos',
+    title: 'Selected Photos',
+    description: 'Approved photos selected for final editing and delivery',
+    icon: Camera,
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200'
+  },
+  {
     id: 'final-photos',
     title: 'Final Photos',
-    description: 'Selected and edited photos ready for client delivery',
+    description: 'Final edited photos ready for client delivery and review',
     icon: Camera,
     color: 'text-purple-500', 
     bgColor: 'bg-purple-50',
@@ -45,7 +54,7 @@ export default function FolderGrid({ onFolderClick }: FolderGridProps) {
           <Card 
             key={folder.id}
             className={`cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${folder.borderColor} border-2`}
-            onClick={() => onFolderClick(folder.id as 'references' | 'all-photos' | 'final-photos')}
+            onClick={() => onFolderClick(folder.id as 'references' | 'all-photos' | 'selected-photos' | 'final-photos')}
           >
             <CardContent className="p-6 text-center">
               <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full ${folder.bgColor} mb-4`}>

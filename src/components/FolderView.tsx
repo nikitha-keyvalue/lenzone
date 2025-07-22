@@ -21,7 +21,7 @@ interface FileItem {
 
 interface FolderViewProps {
   clientId: string;
-  folderType: 'references' | 'all-photos' | 'final-photos';
+  folderType: 'references' | 'all-photos' | 'selected-photos' | 'final-photos';
   onBack: () => void;
 }
 
@@ -40,9 +40,16 @@ const FOLDER_CONFIG = {
     icon: ImageIcon,
     uploadText: 'Upload Photos'
   },
+  'selected-photos': {
+    title: 'Selected Photos',
+    description: 'Approved photos ready for editing and final review',
+    bucket: 'client-selected-photos',
+    icon: ImageIcon,
+    uploadText: 'Upload Selected Photos'
+  },
   'final-photos': {
     title: 'Final Photos',
-    description: 'Selected and edited photos ready for client delivery',
+    description: 'Final edited photos ready for client delivery and review',
     bucket: 'client-final-photos', 
     icon: ImageIcon,
     uploadText: 'Upload Final Photos'
@@ -259,28 +266,44 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
   };
 
   const handleApproveSelected = async () => {
-    if (selectedFiles.size === 0 || folderType !== 'all-photos') return;
+    if (selectedFiles.size === 0) return;
 
     setApproving(true);
     try {
+      let sourceBucket = '';
+      let targetBucket = '';
+      let successMessage = '';
+
+      if (folderType === 'all-photos') {
+        sourceBucket = 'client-all-photos';
+        targetBucket = 'client-selected-photos';
+        successMessage = `${selectedFiles.size} photo(s) moved to selected photos`;
+      } else if (folderType === 'selected-photos') {
+        sourceBucket = 'client-selected-photos';
+        targetBucket = 'client-final-photos';
+        successMessage = `${selectedFiles.size} photo(s) moved to final photos`;
+      } else {
+        return; // Should not happen
+      }
+
       const movePromises = Array.from(selectedFiles).map(async (fileName) => {
-        // Download the file from all-photos
+        // Download the file from source bucket
         const { data: fileData, error: downloadError } = await supabase.storage
-          .from('client-all-photos')
+          .from(sourceBucket)
           .download(`${clientId}/${fileName}`);
 
         if (downloadError) throw downloadError;
 
-        // Upload to final-photos
+        // Upload to target bucket
         const { error: uploadError } = await supabase.storage
-          .from('client-final-photos')
+          .from(targetBucket)
           .upload(`${clientId}/${fileName}`, fileData);
 
         if (uploadError) throw uploadError;
 
-        // Delete from all-photos
+        // Delete from source bucket
         const { error: deleteError } = await supabase.storage
-          .from('client-all-photos')
+          .from(sourceBucket)
           .remove([`${clientId}/${fileName}`]);
 
         if (deleteError) throw deleteError;
@@ -290,7 +313,7 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
       toast({
         title: "Success",
-        description: `${selectedFiles.size} photo(s) approved and moved to final photos`
+        description: successMessage
       });
 
       setSelectedFiles(new Set());
@@ -349,14 +372,18 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
         
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{files.length} files</Badge>
-          {folderType === 'all-photos' && selectedFiles.size > 0 && !isShared && (
+          {(folderType === 'all-photos' || folderType === 'selected-photos') && selectedFiles.size > 0 && !isShared && (
             <Button 
               onClick={handleApproveSelected}
               disabled={approving}
               variant="default"
             >
               <Check className="h-4 w-4 mr-2" />
-              {approving ? 'Approving...' : `Approve ${selectedFiles.size} photo(s)`}
+              {approving ? 'Approving...' : 
+                folderType === 'all-photos' 
+                  ? `Move ${selectedFiles.size} to Selected` 
+                  : `Move ${selectedFiles.size} to Final`
+              }
             </Button>
           )}
           {!isShared && (
@@ -422,8 +449,8 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
                   </div>
                 )}
                 
-                {/* Selection checkbox for all-photos */}
-                {folderType === 'all-photos' && !isShared && (
+                {/* Selection checkbox for all-photos and selected-photos */}
+                {(folderType === 'all-photos' || folderType === 'selected-photos') && !isShared && (
                   <div className="absolute top-2 left-2 z-10">
                     <Checkbox
                       checked={selectedFiles.has(file.name)}
@@ -476,14 +503,14 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
                       </Button>
                     )}
                     
-                    {folderType === 'all-photos' && (
+                    {folderType === 'selected-photos' && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleOpenComments(file.name)}
-                        title="Comment on this photo"
+                        onClick={() => handleDownload(file.name)}
+                        title="Download"
                       >
-                        <MessageCircle className="h-4 w-4" />
+                        <Download className="h-4 w-4" />
                       </Button>
                     )}
                     

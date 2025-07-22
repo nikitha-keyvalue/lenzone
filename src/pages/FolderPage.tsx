@@ -14,6 +14,7 @@ export default function FolderPage() {
     switch (type) {
       case 'references': return 'Reference Images';
       case 'all-photos': return 'All Photos';
+      case 'selected-photos': return 'Selected Photos';
       case 'final-photos': return 'Final Photos';
       default: return 'Files';
     }
@@ -64,7 +65,7 @@ export default function FolderPage() {
           <CardContent>
             <FolderView 
               clientId={id}
-              folderType={folderType as 'references' | 'all-photos' | 'final-photos'}
+              folderType={folderType as 'references' | 'all-photos' | 'selected-photos' | 'final-photos'}
               onBack={handleBack}
             />
           </CardContent>
