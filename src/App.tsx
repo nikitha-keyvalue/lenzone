@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/ClientDetail";
+import FolderPage from "./pages/FolderPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/client/:id" element={<ClientDetail />} />
+            <Route path="/client/:id/:folderType" element={<FolderPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

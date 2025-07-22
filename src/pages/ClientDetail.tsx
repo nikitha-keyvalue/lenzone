@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CreditCard, Camera } from 'lucide-react';
+import { ArrowLeft, CreditCard, Camera, Share2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import FolderGrid from '@/components/FolderGrid';
@@ -25,6 +25,8 @@ export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isShared = searchParams.get('shared') === 'true';
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'folders' | 'references' | 'all-photos' | 'final-photos'>('folders');
@@ -74,6 +76,27 @@ export default function ClientDetail() {
     return new Date(dateString).toLocaleDateString();
   };
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/client/${id}?shared=true`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: "Share link has been copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy link to clipboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFolderClick = (folderType: string) => {
+    navigate(`/client/${id}/${folderType}${isShared ? '?shared=true' : ''}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,14 +128,24 @@ export default function ClientDetail() {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate('/clients')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Clients
-            </Button>
-            <div className="h-6 w-px bg-border"></div>
+            {!isShared && (
+              <>
+                <Button variant="ghost" onClick={() => navigate('/clients')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Clients
+                </Button>
+                <div className="h-6 w-px bg-border"></div>
+              </>
+            )}
             <Camera className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-bold">Client Details</h1>
           </div>
+          {!isShared && (
+            <Button variant="outline" onClick={handleShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          )}
         </div>
       </header>
 
@@ -178,15 +211,7 @@ export default function ClientDetail() {
             <CardTitle>Project Files</CardTitle>
           </CardHeader>
           <CardContent>
-            {currentView === 'folders' ? (
-              <FolderGrid onFolderClick={setCurrentView} />
-            ) : (
-              <FolderView 
-                clientId={id!}
-                folderType={currentView}
-                onBack={() => setCurrentView('folders')}
-              />
-            )}
+            <FolderGrid onFolderClick={handleFolderClick} />
           </CardContent>
         </Card>
       </div>
