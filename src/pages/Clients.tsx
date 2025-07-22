@@ -47,7 +47,16 @@ export default function Clients() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState('all');
+  const [filters, setFilters] = useState({
+    paymentStatus: 'all',
+    eventType: 'all',
+    packageId: 'all',
+    location: '',
+    eventDateFrom: null as Date | null,
+    eventDateTo: null as Date | null,
+    dueDateFrom: null as Date | null,
+    dueDateTo: null as Date | null,
+  });
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -81,7 +90,7 @@ export default function Clients() {
 
   useEffect(() => {
     filterClients();
-  }, [clients, searchTerm, paymentFilter]);
+  }, [clients, searchTerm, filters]);
 
   const fetchClients = async () => {
     try {
@@ -180,13 +189,59 @@ export default function Clients() {
     if (searchTerm) {
       filtered = filtered.filter(client => 
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        client.contact?.toLowerCase().includes(searchTerm.toLowerCase())
+        client.contact?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.description?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Payment status filter
-    if (paymentFilter !== 'all') {
-      filtered = filtered.filter(client => client.payment_status === paymentFilter);
+    if (filters.paymentStatus !== 'all') {
+      filtered = filtered.filter(client => client.payment_status === filters.paymentStatus);
+    }
+
+    // Event type filter
+    if (filters.eventType !== 'all') {
+      filtered = filtered.filter(client => client.event_type === filters.eventType);
+    }
+
+    // Package filter
+    if (filters.packageId !== 'all') {
+      filtered = filtered.filter(client => client.package_id === filters.packageId);
+    }
+
+    // Location filter
+    if (filters.location) {
+      filtered = filtered.filter(client => 
+        client.location?.toLowerCase().includes(filters.location.toLowerCase())
+      );
+    }
+
+    // Event date range filter
+    if (filters.eventDateFrom || filters.eventDateTo) {
+      filtered = filtered.filter(client => {
+        if (!client.event_date) return false;
+        const eventDate = new Date(client.event_date);
+        const fromDate = filters.eventDateFrom;
+        const toDate = filters.eventDateTo;
+        
+        if (fromDate && eventDate < fromDate) return false;
+        if (toDate && eventDate > toDate) return false;
+        return true;
+      });
+    }
+
+    // Due date range filter
+    if (filters.dueDateFrom || filters.dueDateTo) {
+      filtered = filtered.filter(client => {
+        if (!client.due_date) return false;
+        const dueDate = new Date(client.due_date);
+        const fromDate = filters.dueDateFrom;
+        const toDate = filters.dueDateTo;
+        
+        if (fromDate && dueDate < fromDate) return false;
+        if (toDate && dueDate > toDate) return false;
+        return true;
+      });
     }
 
     setFilteredClients(filtered);
@@ -308,16 +363,29 @@ export default function Clients() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingClient(null);
-    setFormData({
-      name: '',
-      description: '',
-      event_date: null,
-      due_date: null,
-      payment_status: 'unpaid',
+    setFilters({
+      paymentStatus: 'all',
+      eventType: 'all',
+      packageId: 'all',
       location: '',
-      contact: '',
-      event_type: '',
-      package_id: ''
+      eventDateFrom: null,
+      eventDateTo: null,
+      dueDateFrom: null,
+      dueDateTo: null,
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilters({
+      paymentStatus: 'all',
+      eventType: 'all',
+      packageId: 'all',
+      location: '',
+      eventDateFrom: null,
+      eventDateTo: null,
+      dueDateFrom: null,
+      dueDateTo: null,
     });
   };
 
@@ -370,33 +438,18 @@ export default function Clients() {
       <div className="container mx-auto px-4 py-8">
         {/* Enhanced Controls Section */}
         <div className="mb-8 space-y-6">
-          {/* Search and Actions Bar */}
+          {/* Search Bar */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
             <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full lg:w-auto">
               {/* Enhanced Search */}
               <div className="relative flex-1 group">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input
-                  placeholder="Search clients by name or contact..."
+                  placeholder="Search clients by name, contact, or description..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:bg-background/80 transition-all duration-200 hover:border-border hover:bg-background/70"
                 />
-              </div>
-              
-              {/* Enhanced Filter */}
-              <div className="relative">
-                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                  <SelectTrigger className="w-[200px] h-11 bg-background/50 border-border/50 hover:border-border hover:bg-background/70 focus:border-primary/50 transition-all duration-200">
-                    <SelectValue placeholder="Filter by payment" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card border-border/50">
-                    <SelectItem value="all" className="hover:bg-accent/50">All Payments</SelectItem>
-                    <SelectItem value="paid" className="hover:bg-accent/50">Paid</SelectItem>
-                    <SelectItem value="unpaid" className="hover:bg-accent/50">Unpaid</SelectItem>
-                    <SelectItem value="partial" className="hover:bg-accent/50">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
@@ -584,6 +637,217 @@ export default function Clients() {
                 </form>
               </DialogContent>
             </Dialog>
+          </div>
+
+          {/* Comprehensive Filters */}
+          <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Filters</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Clear All
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Payment Status Filter */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Payment Status</Label>
+                <Select 
+                  value={filters.paymentStatus} 
+                  onValueChange={(value) => setFilters({...filters, paymentStatus: value})}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Payments</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Event Type Filter */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Event Type</Label>
+                <Select 
+                  value={filters.eventType} 
+                  onValueChange={(value) => setFilters({...filters, eventType: value})}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="wedding">Wedding</SelectItem>
+                    <SelectItem value="portrait">Portrait</SelectItem>
+                    <SelectItem value="corporate">Corporate</SelectItem>
+                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Package Filter */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Package</Label>
+                <Select 
+                  value={filters.packageId} 
+                  onValueChange={(value) => setFilters({...filters, packageId: value})}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Packages</SelectItem>
+                    {packages.map((pkg) => (
+                      <SelectItem key={pkg.id} value={pkg.id}>
+                        {pkg.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Location Filter */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Location</Label>
+                <Input
+                  placeholder="Filter by location..."
+                  value={filters.location}
+                  onChange={(e) => setFilters({...filters, location: e.target.value})}
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            {/* Date Range Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+              {/* Event Date Range */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Event Date Range</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !filters.eventDateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.eventDateFrom ? format(filters.eventDateFrom, "MMM dd, yyyy") : <span>From date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.eventDateFrom || undefined}
+                          onSelect={(date) => setFilters({...filters, eventDateFrom: date || null})}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !filters.eventDateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.eventDateTo ? format(filters.eventDateTo, "MMM dd, yyyy") : <span>To date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.eventDateTo || undefined}
+                          onSelect={(date) => setFilters({...filters, eventDateTo: date || null})}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+
+              {/* Due Date Range */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Due Date Range</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !filters.dueDateFrom && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.dueDateFrom ? format(filters.dueDateFrom, "MMM dd, yyyy") : <span>From date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.dueDateFrom || undefined}
+                          onSelect={(date) => setFilters({...filters, dueDateFrom: date || null})}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-10",
+                            !filters.dueDateTo && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.dueDateTo ? format(filters.dueDateTo, "MMM dd, yyyy") : <span>To date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.dueDateTo || undefined}
+                          onSelect={(date) => setFilters({...filters, dueDateTo: date || null})}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
