@@ -42,6 +42,7 @@ export default function PhotoCommentsPanel({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [isPhotographer, setIsPhotographer] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,8 +50,30 @@ export default function PhotoCommentsPanel({
   useEffect(() => {
     if (isOpen) {
       fetchComments();
+      checkPhotographerStatus();
     }
-  }, [isOpen, photoPath]);
+  }, [isOpen, photoPath, user]);
+
+  const checkPhotographerStatus = async () => {
+    if (!user) {
+      setIsPhotographer(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('photographer_id')
+        .eq('id', clientId)
+        .single();
+
+      if (error) throw error;
+      setIsPhotographer(data?.photographer_id === user.id);
+    } catch (error) {
+      console.error('Error checking photographer status:', error);
+      setIsPhotographer(false);
+    }
+  };
 
   const fetchComments = async () => {
     setLoading(true);
@@ -122,10 +145,10 @@ export default function PhotoCommentsPanel({
 
     setResolving(true);
     try {
-      // Upload the new file to replace the existing one
+      // Upload the new file to replace the existing one at the exact same path
       const { error: uploadError } = await supabase.storage
         .from('client-all-photos')
-        .upload(`${clientId}/${file.name}`, file, {
+        .upload(photoPath, file, {
           upsert: true // This will replace if file exists
         });
 
@@ -169,7 +192,6 @@ export default function PhotoCommentsPanel({
   };
 
   const hasUnresolvedComments = comments.some(comment => !comment.resolved_at);
-  const isPhotographer = user && comments.length > 0; // Simple check - can be enhanced
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
