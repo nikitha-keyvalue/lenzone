@@ -356,25 +356,15 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                         </Badge>
                       </div>
                       
-                      {!isShared && subItem.requiresReview && (
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateDeliverableStatus(subItem.id, 'pending-review')}
-                            disabled={subItem.status === 'pending-review'}
-                          >
-                            Submit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => updateDeliverableStatus(subItem.id, 'approved')}
-                            disabled={subItem.status === 'approved'}
-                          >
-                            Approve
-                          </Button>
-                        </div>
+                      {!isShared && subItem.requiresReview && subItem.status !== 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateDeliverableStatus(subItem.id, 'pending-review')}
+                          disabled={subItem.status === 'pending-review'}
+                        >
+                          Submit
+                        </Button>
                       )}
                       
                       {isShared && subItem.status === 'pending-review' && (
