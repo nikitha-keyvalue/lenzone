@@ -386,9 +386,12 @@ export default function Clients() {
                 </Select>
               </div>
 
-              <Dialog open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={() => setEditingClient(null)}>
+                  <Button onClick={() => {
+                    setEditingClient(null);
+                    setDialogOpen(true);
+                  }}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>
