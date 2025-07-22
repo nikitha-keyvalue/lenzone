@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import FolderGrid from '@/components/FolderGrid';
 import FolderView from '@/components/FolderView';
 import WorkflowProgress from '@/components/WorkflowProgress';
+import ClientDeliverables from '@/components/ClientDeliverables';
 
 interface Client {
   id: string;
@@ -210,9 +211,13 @@ export default function ClientDetail() {
           </CardContent>
         </Card>
 
-        {/* Workflow Progress */}
+        {/* Workflow Progress / Client Deliverables */}
         <div className="mb-6">
-          <WorkflowProgress client={client} isShared={isShared} />
+          {isShared ? (
+            <ClientDeliverables client={client} />
+          ) : (
+            <WorkflowProgress client={client} isShared={isShared} />
+          )}
         </div>
 
         {/* Project Files */}
