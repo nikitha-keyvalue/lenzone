@@ -52,6 +52,17 @@ All colors MUST be HSL.
     --camera-gold: 165 80% 49%;
     --photo-frame: 220 13% 18%;
     --gallery-bg: 220 13% 13%;
+    
+    /* Comment status colors */
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 13% 9%;
+    --warning-muted: 38 100% 97%;
+    --warning-border: 38 100% 87%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 220 13% 95%;
+    --success-muted: 142 76% 97%;
+    --success-border: 142 76% 87%;
   }
 
   /* Optional light mode override (not used by default) */
@@ -83,6 +94,17 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 47 96% 53%;
+    
+    /* Comment status colors for light mode */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 38 100% 97%;
+    --warning-border: 38 100% 87%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 142 76% 97%;
+    --success-border: 142 76% 87%;
   }
 }
 

@@ -7,6 +7,7 @@ import { ArrowLeft, Upload, File, Image as ImageIcon, Download, Trash2, Check, M
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import PhotoCommentsPanel from './PhotoCommentsPanel';
 
 interface FileItem {
@@ -418,18 +419,19 @@ export default function FolderView({ clientId, folderType, refreshTrigger, onFil
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {files.map((file) => (
-            <Card key={file.id} className={`hover:shadow-md transition-shadow relative group ${
-              file.commentStatus === 'has-comments' ? 'border-orange-200 bg-orange-50' : 
-              file.commentStatus === 'resolved' ? 'border-green-200 bg-green-50' : ''
-            }`}>
+            <Card key={file.id} className={cn(
+              "hover:shadow-md transition-shadow relative group",
+              file.commentStatus === 'has-comments' && "border-warning bg-warning/5",
+              file.commentStatus === 'resolved' && "border-success bg-success/5"
+            )}>
               <CardContent className="p-4">
                 {/* Comment status indicator */}
                 {file.commentStatus !== 'none' && (
                   <div className="absolute top-2 right-2 z-10">
                     {file.commentStatus === 'has-comments' ? (
-                      <AlertCircle className="h-5 w-5 text-orange-600" />
+                      <AlertCircle className="h-5 w-5 text-warning" />
                     ) : (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-5 w-5 text-success" />
                     )}
                   </div>
                 )}
