@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Upload, File, Image as ImageIcon, Download, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Upload, File, Image as ImageIcon, Download, Trash2, Check, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'react-router-dom';
+import PhotoCommentsPanel from './PhotoCommentsPanel';
 
 interface FileItem {
   name: string;
@@ -48,7 +51,13 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
   const [files, setFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [approving, setApproving] = useState(false);
+  const [commentsPanelOpen, setCommentsPanelOpen] = useState(false);
+  const [selectedPhotoForComments, setSelectedPhotoForComments] = useState<string>('');
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const isShared = searchParams.get('shared') === 'true';
   
   const config = FOLDER_CONFIG[folderType];
   const Icon = config.icon;
@@ -187,6 +196,75 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
     });
   };
 
+  const handleFileSelection = (fileName: string, checked: boolean) => {
+    const newSelection = new Set(selectedFiles);
+    if (checked) {
+      newSelection.add(fileName);
+    } else {
+      newSelection.delete(fileName);
+    }
+    setSelectedFiles(newSelection);
+  };
+
+  const handleApproveSelected = async () => {
+    if (selectedFiles.size === 0 || folderType !== 'all-photos') return;
+
+    setApproving(true);
+    try {
+      const movePromises = Array.from(selectedFiles).map(async (fileName) => {
+        // Download the file from all-photos
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('client-all-photos')
+          .download(`${clientId}/${fileName}`);
+
+        if (downloadError) throw downloadError;
+
+        // Upload to final-photos
+        const { error: uploadError } = await supabase.storage
+          .from('client-final-photos')
+          .upload(`${clientId}/${fileName}`, fileData);
+
+        if (uploadError) throw uploadError;
+
+        // Delete from all-photos
+        const { error: deleteError } = await supabase.storage
+          .from('client-all-photos')
+          .remove([`${clientId}/${fileName}`]);
+
+        if (deleteError) throw deleteError;
+      });
+
+      await Promise.all(movePromises);
+
+      toast({
+        title: "Success",
+        description: `${selectedFiles.size} photo(s) approved and moved to final photos`
+      });
+
+      setSelectedFiles(new Set());
+      fetchFiles();
+    } catch (error) {
+      console.error('Error approving photos:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve photos",
+        variant: "destructive"
+      });
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleOpenComments = (fileName: string) => {
+    setSelectedPhotoForComments(`${clientId}/${fileName}`);
+    setCommentsPanelOpen(true);
+  };
+
+  const handleCloseComments = () => {
+    setCommentsPanelOpen(false);
+    setSelectedPhotoForComments('');
+  };
+
   if (loading) {
     return (
       <div className="p-8 text-center">
@@ -215,20 +293,32 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
         
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{files.length} files</Badge>
-          <div className="relative">
-            <input
-              type="file"
-              multiple
-              accept="image/*,video/*,application/pdf"
-              onChange={handleFileUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={uploading}
-            />
-            <Button disabled={uploading}>
-              <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Uploading...' : config.uploadText}
+          {folderType === 'all-photos' && selectedFiles.size > 0 && !isShared && (
+            <Button 
+              onClick={handleApproveSelected}
+              disabled={approving}
+              variant="default"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              {approving ? 'Approving...' : `Approve ${selectedFiles.size} photo(s)`}
             </Button>
-          </div>
+          )}
+          {!isShared && (
+            <div className="relative">
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*,application/pdf"
+                onChange={handleFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={uploading}
+              />
+              <Button disabled={uploading}>
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? 'Uploading...' : config.uploadText}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -260,11 +350,30 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {files.map((file) => (
-            <Card key={file.id} className="hover:shadow-md transition-shadow">
+            <Card key={file.id} className="hover:shadow-md transition-shadow relative group">
               <CardContent className="p-4">
+                {/* Selection checkbox for all-photos */}
+                {folderType === 'all-photos' && !isShared && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <Checkbox
+                      checked={selectedFiles.has(file.name)}
+                      onCheckedChange={(checked) => handleFileSelection(file.name, checked as boolean)}
+                      className="bg-background border-2"
+                    />
+                  </div>
+                )}
+                
                 <div className="flex items-start justify-between mb-3">
                   <File className="h-8 w-8 text-primary flex-shrink-0" />
                   <div className="flex items-center space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleOpenComments(file.name)}
+                      title="Comment on this photo"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -272,13 +381,15 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(file.name)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!isShared && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(file.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
                 
@@ -295,6 +406,15 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
           ))}
         </div>
       )}
+      
+      {/* Comments Panel */}
+      <PhotoCommentsPanel
+        isOpen={commentsPanelOpen}
+        onClose={handleCloseComments}
+        clientId={clientId}
+        photoPath={selectedPhotoForComments}
+        photoName={selectedPhotoForComments.split('/').pop() || ''}
+      />
     </div>
   );
 }

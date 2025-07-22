@@ -56,6 +56,39 @@ export type Database = {
         }
         Relationships: []
       }
+      photo_comments: {
+        Row: {
+          client_id: string
+          comment: string
+          commenter_email: string | null
+          commenter_name: string | null
+          created_at: string
+          id: string
+          photo_path: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          comment: string
+          commenter_email?: string | null
+          commenter_name?: string | null
+          created_at?: string
+          id?: string
+          photo_path: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          comment?: string
+          commenter_email?: string | null
+          commenter_name?: string | null
+          created_at?: string
+          id?: string
+          photo_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
