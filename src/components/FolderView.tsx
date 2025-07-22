@@ -23,6 +23,7 @@ interface FolderViewProps {
   clientId: string;
   folderType: 'references' | 'all-photos' | 'selected-photos' | 'final-photos';
   refreshTrigger?: number;
+  onFileCountChange?: (count: number) => void;
 }
 
 const FOLDER_CONFIG = {
@@ -56,7 +57,7 @@ const FOLDER_CONFIG = {
   }
 };
 
-export default function FolderView({ clientId, folderType, refreshTrigger }: FolderViewProps) {
+export default function FolderView({ clientId, folderType, refreshTrigger, onFileCountChange }: FolderViewProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [clientPackage, setClientPackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -159,6 +160,7 @@ export default function FolderView({ clientId, folderType, refreshTrigger }: Fol
       );
       
       setFiles(filesWithUrls);
+      onFileCountChange?.(filesWithUrls.length);
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({

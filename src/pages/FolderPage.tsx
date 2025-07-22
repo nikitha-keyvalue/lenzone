@@ -2,6 +2,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Camera, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ export default function FolderPage() {
   const isShared = searchParams.get('shared') === 'true';
   const [uploading, setUploading] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [fileCount, setFileCount] = useState(0);
   const { toast } = useToast();
 
   const getFolderTitle = (type: string) => {
@@ -129,22 +131,25 @@ export default function FolderPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{getFolderTitle(folderType)}</CardTitle>
-              {!isShared && currentConfig && (
-                <div className="relative">
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*,application/pdf"
-                    onChange={handleFileUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={uploading}
-                  />
-                  <Button disabled={uploading} className="h-10 px-4">
-                    <Upload className="h-4 w-4 mr-2" />
-                    {uploading ? 'Uploading...' : currentConfig.uploadText}
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center space-x-3">
+                <Badge variant="secondary">{fileCount} files</Badge>
+                {!isShared && currentConfig && (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*,application/pdf"
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      disabled={uploading}
+                    />
+                    <Button disabled={uploading} className="h-10 px-4">
+                      <Upload className="h-4 w-4 mr-2" />
+                      {uploading ? 'Uploading...' : currentConfig.uploadText}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -152,6 +157,7 @@ export default function FolderPage() {
               clientId={id}
               folderType={folderType as 'references' | 'all-photos' | 'selected-photos' | 'final-photos'}
               refreshTrigger={refreshTrigger}
+              onFileCountChange={(count) => setFileCount(count)}
             />
           </CardContent>
         </Card>
