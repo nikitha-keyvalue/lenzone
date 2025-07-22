@@ -417,16 +417,8 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Icon className="h-6 w-6 text-primary" />
-          <div>
-            <h2 className="text-xl font-bold">{config.title}</h2>
-            <p className="text-sm text-muted-foreground">{config.description}</p>
-          </div>
-        </div>
-        
+        <div className="flex items-center justify-between"
+        >
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{files.length} files</Badge>
           {(folderType === 'all-photos' || folderType === 'selected-photos') && selectedFiles.size > 0 && !isShared && (
