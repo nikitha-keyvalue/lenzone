@@ -74,6 +74,6 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Boiler plate code
 The boiler plate code contains 
- 1.Basic authentication flow
- 2.Basic listing UI with supabase integration
- 3.Basic client detail page skeleton
+ - Basic authentication flow
+ - Basic listing UI with supabase integration
+ - Basic client detail page skeleton
