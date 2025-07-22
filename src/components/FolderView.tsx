@@ -477,47 +477,15 @@ export default function FolderView({ clientId, folderType, refreshTrigger, onFil
                   
                   <div className="flex items-center space-x-1">
                     {/* Show different buttons based on folder type */}
-                    {folderType === 'references' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(file.name)}
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                    
-                    {folderType === 'selected-photos' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownload(file.name)}
-                        title="Download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                    
                     {folderType === 'final-photos' && (
-                      <>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenComments(file.name)}
-                          title="Comment on this photo"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDownload(file.name)}
-                          title="Download"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenComments(file.name)}
+                        title="Comment on this photo"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
                     )}
                     
                     {!isShared && (
