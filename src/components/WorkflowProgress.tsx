@@ -268,7 +268,9 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                 </div>
                 
                 <CollapsibleContent className="space-y-2 ml-6">
-                  {item.subItems?.map((subItem) => (
+                  {item.subItems
+                    ?.filter(subItem => !isShared || subItem.status === 'pending-review')
+                    .map((subItem) => (
                     <div key={subItem.id} className="flex items-center justify-between p-2 rounded border bg-background">
                       <div className="flex items-center gap-3">
                         <span className="text-sm">{getSubItemIcon(subItem.status)}</span>
@@ -309,6 +311,16 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                             Approve
                           </Button>
                         </div>
+                      )}
+                      
+                      {isShared && subItem.status === 'pending-review' && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => updateDeliverableStatus(subItem.id, 'approved')}
+                        >
+                          Approve
+                        </Button>
                       )}
                     </div>
                   ))}
