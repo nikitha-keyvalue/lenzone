@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, CreditCard, Upload, Image, Camera } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft, CreditCard, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import FolderGrid from '@/components/FolderGrid';
+import FolderView from '@/components/FolderView';
 
 interface Client {
   id: string;
@@ -24,20 +24,16 @@ interface Client {
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'folders' | 'references' | 'all-photos' | 'final-photos'>('folders');
 
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
     if (id) {
       fetchClient();
     }
-  }, [user, id, navigate]);
+  }, [id]);
 
   const fetchClient = async () => {
     if (!id) return;
@@ -176,61 +172,21 @@ export default function ClientDetail() {
           </CardContent>
         </Card>
 
-        {/* Client Folders */}
+        {/* Project Files */}
         <Card>
           <CardHeader>
             <CardTitle>Project Files</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="references" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="references">References</TabsTrigger>
-                <TabsTrigger value="all-photos">All Photos</TabsTrigger>
-                <TabsTrigger value="final-photos">Final Photos</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="references" className="mt-6">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">Client References</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload sample shots, mood boards, and inspiration images provided by the client
-                  </p>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload References
-                  </Button>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="all-photos" className="mt-6">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                  <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">All Photos</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload raw and unedited photos from the event or photo session
-                  </p>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Photos
-                  </Button>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="final-photos" className="mt-6">
-                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                  <Camera className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">Final Photos</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload selected and edited photos ready for client delivery
-                  </p>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Final Photos
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
+            {currentView === 'folders' ? (
+              <FolderGrid onFolderClick={setCurrentView} />
+            ) : (
+              <FolderView 
+                clientId={id!}
+                folderType={currentView}
+                onBack={() => setCurrentView('folders')}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
