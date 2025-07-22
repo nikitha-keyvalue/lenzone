@@ -9,10 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, LogOut, Camera, Eye, Edit, Trash2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Plus, Search, LogOut, Camera, Eye, Edit, Trash2, CalendarIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Client {
   id: string;
@@ -55,8 +59,8 @@ export default function Clients() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    event_date: '',
-    due_date: '',
+    event_date: null as Date | null,
+    due_date: null as Date | null,
     payment_status: 'unpaid' as const,
     location: '',
     contact: '',
@@ -196,8 +200,8 @@ export default function Clients() {
           .from('clients')
           .update({
             ...formData,
-            event_date: formData.event_date || null,
-            due_date: formData.due_date || null,
+            event_date: formData.event_date ? format(formData.event_date, 'yyyy-MM-dd') : null,
+            due_date: formData.due_date ? format(formData.due_date, 'yyyy-MM-dd') : null,
             description: formData.description || null,
             location: formData.location || null,
             contact: formData.contact || null,
@@ -219,8 +223,8 @@ export default function Clients() {
           .insert([{
             ...formData,
             photographer_id: user!.id,
-            event_date: formData.event_date || null,
-            due_date: formData.due_date || null,
+            event_date: formData.event_date ? format(formData.event_date, 'yyyy-MM-dd') : null,
+            due_date: formData.due_date ? format(formData.due_date, 'yyyy-MM-dd') : null,
             description: formData.description || null,
             location: formData.location || null,
             contact: formData.contact || null,
@@ -253,8 +257,8 @@ export default function Clients() {
     setFormData({
       name: client.name,
       description: client.description || '',
-      event_date: client.event_date || '',
-      due_date: client.due_date || '',
+      event_date: client.event_date ? new Date(client.event_date) : null,
+      due_date: client.due_date ? new Date(client.due_date) : null,
       payment_status: client.payment_status as any,
       location: client.location || '',
       contact: client.contact || '',
@@ -299,8 +303,8 @@ export default function Clients() {
     setFormData({
       name: '',
       description: '',
-      event_date: '',
-      due_date: '',
+      event_date: null,
+      due_date: null,
       payment_status: 'unpaid',
       location: '',
       contact: '',
@@ -460,24 +464,58 @@ export default function Clients() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="event_date">Event Date</Label>
-                      <Input
-                        id="event_date"
-                        type="date"
-                        value={formData.event_date}
-                        onChange={(e) => setFormData({...formData, event_date: e.target.value})}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.event_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.event_date ? format(formData.event_date, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover border-border shadow-lg" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.event_date || undefined}
+                            onSelect={(date) => setFormData({...formData, event_date: date || null})}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="due_date">Due Date</Label>
-                      <Input
-                        id="due_date"
-                        type="date"
-                        value={formData.due_date}
-                        onChange={(e) => setFormData({...formData, due_date: e.target.value})}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !formData.due_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formData.due_date ? format(formData.due_date, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-popover border-border shadow-lg" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={formData.due_date || undefined}
+                            onSelect={(date) => setFormData({...formData, due_date: date || null})}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="package_id">Photography Package</Label>
