@@ -149,6 +149,11 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
     }
   };
 
+  const isEventCompleted = () => {
+    if (!client.event_date) return false;
+    return new Date() > new Date(client.event_date);
+  };
+
   const areDeliverablesReady = () => {
     if (!packageData) return false;
     return packageData.deliverables.every(item => 
@@ -172,8 +177,8 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
       id: 'coverage',
       label: 'Event Coverage Completed',
       icon: Calendar,
-      status: workflowState.coverageCompleted ? 'done' : 'pending',
-      tooltip: 'Mark as done when event coverage is completed'
+      status: isEventCompleted() || workflowState.coverageCompleted ? 'done' : 'pending',
+      tooltip: 'Auto-checked when event date has passed, or manually marked as done'
     },
     {
       id: 'selection',
