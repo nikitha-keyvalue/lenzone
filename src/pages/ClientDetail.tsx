@@ -118,8 +118,7 @@ export default function ClientDetail() {
           <h2 className="text-2xl font-bold mb-4">Client not found</h2>
           {!isShared && (
             <Button onClick={() => navigate('/clients')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Clients
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
         </div>
@@ -136,8 +135,7 @@ export default function ClientDetail() {
             {!isShared && (
               <>
                 <Button variant="ghost" onClick={() => navigate('/clients')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Clients
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <div className="h-6 w-px bg-border"></div>
               </>
