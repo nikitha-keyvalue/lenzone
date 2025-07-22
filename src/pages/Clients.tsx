@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Search, LogOut, Camera, Eye } from 'lucide-react';
+import { Plus, Search, LogOut, Camera, Eye, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ interface Client {
   payment_status: string;
   location: string | null;
   contact: string | null;
+  event_type: string | null;
   created_at: string;
 }
 
@@ -33,6 +34,8 @@ export default function Clients() {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeleteingClient] = useState<Client | null>(null);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -45,7 +48,8 @@ export default function Clients() {
     due_date: '',
     payment_status: 'unpaid' as const,
     location: '',
-    contact: ''
+    contact: '',
+    event_type: ''
   });
 
   useEffect(() => {
@@ -146,45 +150,119 @@ export default function Clients() {
     e.preventDefault();
     
     try {
+      if (editingClient) {
+        // Update existing client
+        const { error } = await supabase
+          .from('clients')
+          .update({
+            ...formData,
+            event_date: formData.event_date || null,
+            due_date: formData.due_date || null,
+            description: formData.description || null,
+            location: formData.location || null,
+            contact: formData.contact || null,
+            event_type: formData.event_type || null
+          })
+          .eq('id', editingClient.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Client updated successfully"
+        });
+      } else {
+        // Create new client
+        const { error } = await supabase
+          .from('clients')
+          .insert([{
+            ...formData,
+            photographer_id: user!.id,
+            event_date: formData.event_date || null,
+            due_date: formData.due_date || null,
+            description: formData.description || null,
+            location: formData.location || null,
+            contact: formData.contact || null,
+            event_type: formData.event_type || null
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Client added successfully"
+        });
+      }
+
+      handleCloseDialog();
+      fetchClients();
+    } catch (error) {
+      console.error('Error saving client:', error);
+      toast({
+        title: "Error",
+        description: editingClient ? "Failed to update client" : "Failed to add client",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (client: Client) => {
+    setEditingClient(client);
+    setFormData({
+      name: client.name,
+      description: client.description || '',
+      event_date: client.event_date || '',
+      due_date: client.due_date || '',
+      payment_status: client.payment_status as any,
+      location: client.location || '',
+      contact: client.contact || '',
+      event_type: client.event_type || ''
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (client: Client) => {
+    if (!confirm(`Are you sure you want to delete ${client.name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
       const { error } = await supabase
         .from('clients')
-        .insert([{
-          ...formData,
-          photographer_id: user!.id,
-          event_date: formData.event_date || null,
-          due_date: formData.due_date || null,
-          description: formData.description || null,
-          location: formData.location || null,
-          contact: formData.contact || null
-        }]);
+        .delete()
+        .eq('id', client.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Client added successfully"
+        description: "Client deleted successfully"
       });
 
-      setDialogOpen(false);
-      setFormData({
-        name: '',
-        description: '',
-        event_date: '',
-        due_date: '',
-        payment_status: 'unpaid',
-        location: '',
-        contact: ''
-      });
-      
       fetchClients();
     } catch (error) {
-      console.error('Error adding client:', error);
+      console.error('Error deleting client:', error);
       toast({
         title: "Error",
-        description: "Failed to add client",
+        description: "Failed to delete client",
         variant: "destructive"
       });
     }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingClient(null);
+    setFormData({
+      name: '',
+      description: '',
+      event_date: '',
+      due_date: '',
+      payment_status: 'unpaid',
+      location: '',
+      contact: '',
+      event_type: ''
+    });
   };
 
   const getPaymentBadgeVariant = (status: string) => {
@@ -264,16 +342,16 @@ export default function Clients() {
                 </Select>
               </div>
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button onClick={() => setEditingClient(null)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Client
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Client</DialogTitle>
+                    <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -309,6 +387,25 @@ export default function Clients() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
+                        <Label htmlFor="event_type">Event Type</Label>
+                        <Select 
+                          value={formData.event_type} 
+                          onValueChange={(value) => setFormData({...formData, event_type: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select event type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="wedding">Wedding</SelectItem>
+                            <SelectItem value="portrait">Portrait</SelectItem>
+                            <SelectItem value="corporate">Corporate</SelectItem>
+                            <SelectItem value="event">Event</SelectItem>
+                            <SelectItem value="product">Product</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="event_date">Event Date</Label>
                         <Input
                           id="event_date"
@@ -317,6 +414,9 @@ export default function Clients() {
                           onChange={(e) => setFormData({...formData, event_date: e.target.value})}
                         />
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="due_date">Due Date</Label>
                         <Input
@@ -357,10 +457,12 @@ export default function Clients() {
                     </div>
 
                     <div className="flex justify-end space-x-2 pt-4">
-                      <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                      <Button type="button" variant="outline" onClick={handleCloseDialog}>
                         Cancel
                       </Button>
-                      <Button type="submit">Add Client</Button>
+                      <Button type="submit">
+                        {editingClient ? 'Update Client' : 'Add Client'}
+                      </Button>
                     </div>
                   </form>
                 </DialogContent>
@@ -387,25 +489,31 @@ export default function Clients() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Contact</TableHead>
+                      <TableHead>Event Type</TableHead>
                       <TableHead>Event Date</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead>Payment</TableHead>
                       <TableHead>Location</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="w-24">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sectionClients.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           No clients in this section.
                         </TableCell>
                       </TableRow>
                     ) : (
                       sectionClients.map((client) => (
-                        <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableRow 
+                          key={client.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/client/${client.id}`)}
+                        >
                           <TableCell className="font-medium">{client.name}</TableCell>
                           <TableCell>{client.contact || '-'}</TableCell>
+                          <TableCell className="capitalize">{client.event_type || '-'}</TableCell>
                           <TableCell>{formatDate(client.event_date)}</TableCell>
                           <TableCell>{formatDate(client.due_date)}</TableCell>
                           <TableCell>
@@ -414,14 +522,30 @@ export default function Clients() {
                             </Badge>
                           </TableCell>
                           <TableCell>{client.location || '-'}</TableCell>
-                          <TableCell>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => navigate(`/client/${client.id}`)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => navigate(`/client/${client.id}`)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEdit(client)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDelete(client)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
