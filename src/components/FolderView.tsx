@@ -15,6 +15,7 @@ interface FileItem {
   created_at: string;
   updated_at: string;
   metadata: any;
+  imageUrl?: string;
 }
 
 interface FolderViewProps {
@@ -66,6 +67,19 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
     fetchFiles();
   }, [clientId, folderType]);
 
+  const getImageUrl = (fileName: string): string => {
+    const { data } = supabase.storage
+      .from(config.bucket)
+      .getPublicUrl(`${clientId}/${fileName}`);
+    return data.publicUrl;
+  };
+
+  const isImageFile = (fileName: string): boolean => {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    return imageExtensions.includes(extension || '');
+  };
+
   const fetchFiles = async () => {
     try {
       const { data, error } = await supabase.storage
@@ -76,7 +90,14 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
         });
 
       if (error) throw error;
-      setFiles(data || []);
+      
+      // Add image URLs to files
+      const filesWithUrls = (data || []).map(file => ({
+        ...file,
+        imageUrl: getImageUrl(file.name)
+      }));
+      
+      setFiles(filesWithUrls);
     } catch (error) {
       console.error('Error fetching files:', error);
       toast({
@@ -363,29 +384,87 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
                   </div>
                 )}
                 
-                <div className="flex items-start justify-between mb-3">
-                  <File className="h-8 w-8 text-primary flex-shrink-0" />
+                {/* Image thumbnail or file icon */}
+                <div className="mb-3">
+                  {isImageFile(file.name) ? (
+                    <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                      <img 
+                        src={file.imageUrl || ''} 
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.removeAttribute('hidden');
+                        }}
+                      />
+                      <div className="hidden w-full h-full flex items-center justify-center">
+                        <File className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                      <File className="h-12 w-12 text-primary" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm truncate flex-1 mr-2" title={file.name}>
+                    {file.name}
+                  </h4>
+                  
                   <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleOpenComments(file.name)}
-                      title="Comment on this photo"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDownload(file.name)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    {/* Show different buttons based on folder type */}
+                    {folderType === 'references' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(file.name)}
+                        title="Download"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {folderType === 'all-photos' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleOpenComments(file.name)}
+                        title="Comment on this photo"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {folderType === 'final-photos' && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleOpenComments(file.name)}
+                          title="Comment on this photo"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(file.name)}
+                          title="Download"
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                    
                     {!isShared && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(file.name)}
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -393,11 +472,7 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
                   </div>
                 </div>
                 
-                <h4 className="font-medium text-sm mb-2 truncate" title={file.name}>
-                  {file.name}
-                </h4>
-                
-                <div className="text-xs text-muted-foreground space-y-1">
+                <div className="text-xs text-muted-foreground space-y-1 mt-2">
                   <p>Size: {formatFileSize(file.metadata?.size || 0)}</p>
                   <p>Uploaded: {formatDate(file.created_at)}</p>
                 </div>
