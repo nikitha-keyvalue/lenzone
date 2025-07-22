@@ -20,7 +20,7 @@ const Index = () => {
         <div className="flex items-center justify-center mb-8">
           <Camera className="h-16 w-16 text-primary mr-4" />
           <h1 className="text-5xl font-bold text-foreground">
-            PhotoClient Pro
+            LenzOne
           </h1>
         </div>
         
