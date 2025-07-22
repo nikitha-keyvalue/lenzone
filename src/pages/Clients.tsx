@@ -423,7 +423,7 @@ export default function Clients() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Camera className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold">PhotoClient Pro</h1>
+            <h1 className="text-2xl font-bold">LenzOne</h1>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-muted-foreground">

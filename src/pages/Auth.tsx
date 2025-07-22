@@ -62,7 +62,7 @@ export default function Auth() {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
             <Camera className="h-8 w-8 text-primary mr-2" />
-            <CardTitle className="text-2xl">PhotoClient Pro</CardTitle>
+            <CardTitle className="text-2xl">LenzOne</CardTitle>
           </div>
           <CardDescription>
             Manage your photography clients and projects
