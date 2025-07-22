@@ -239,7 +239,7 @@ export default function PhotoCommentsPanel({
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center space-x-2">
                     <p className="text-sm font-medium">
-                      {comment.commenter_name || 'Anonymous'}
+                      {comment.commenter_name || 'Client'}
                     </p>
                     {comment.resolved_at && (
                       <CheckCircle className="h-4 w-4 text-success" />
