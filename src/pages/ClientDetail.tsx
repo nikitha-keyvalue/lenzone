@@ -41,20 +41,13 @@ export default function ClientDetail() {
     if (!id) return;
     
     try {
-      console.log('Fetching client with ID:', id, 'Is shared:', isShared);
-      
       const { data, error } = await supabase
         .from('clients')
         .select('*')
         .eq('id', id)
         .single();
 
-      console.log('Supabase response:', { data, error });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
       setClient(data);
     } catch (error) {
       console.error('Error fetching client:', error);
