@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight, Package, Calendar, Camera, Edit, Gift, MessageSquare, Truck, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Client {
   id: string;
@@ -48,13 +50,15 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   const [deliverablesSectionOpen, setDeliverablesSectionOpen] = useState(false);
   const [selectedPhotosCount, setSelectedPhotosCount] = useState(0);
   const [finalPhotosCount, setFinalPhotosCount] = useState(0);
+  const { toast } = useToast();
 
   // Mock data for demonstration - in real app, this would come from the database
   const [workflowState, setWorkflowState] = useState({
     editingManuallyDone: false,
     finalDeliveryDone: false,
-    deliverableItems: {} as Record<string, 'not-started' | 'pending-review' | 'revisions-needed' | 'approved'>
   });
+
+  const [deliverableItems, setDeliverableItems] = useState<Record<string, 'not-started' | 'pending-review' | 'revisions-needed' | 'approved'>>({});
 
   useEffect(() => {
     // Fetch package data and photo counts
@@ -80,7 +84,51 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
     // Mock photo counts - replace with actual counts
     setSelectedPhotosCount(85);
     setFinalPhotosCount(85);
+    
+    // Fetch deliverable status from database
+    fetchDeliverableStatus();
+    
+    // Set up real-time subscription for deliverable updates
+    const channel = supabase
+      .channel('workflow-deliverable-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deliverable_status',
+          filter: `client_id=eq.${client.id}`
+        },
+        () => {
+          fetchDeliverableStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [client]);
+
+  const fetchDeliverableStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deliverable_status')
+        .select('*')
+        .eq('client_id', client.id);
+
+      if (error) throw error;
+      
+      const statusMap: Record<string, 'not-started' | 'pending-review' | 'revisions-needed' | 'approved'> = {};
+      data?.forEach(item => {
+        statusMap[item.deliverable_name] = item.status as 'not-started' | 'pending-review' | 'revisions-needed' | 'approved';
+      });
+      
+      setDeliverableItems(statusMap);
+    } catch (error) {
+      console.error('Error fetching deliverable status:', error);
+    }
+  };
 
   const getCheckboxIcon = (status: string) => {
     switch (status) {
@@ -115,7 +163,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   const areDeliverablesReady = () => {
     if (!packageData) return false;
     return packageData.deliverables.every(item => 
-      workflowState.deliverableItems[item] === 'approved'
+      deliverableItems[item] === 'approved'
     );
   };
 
@@ -164,7 +212,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
       subItems: packageData?.deliverables.map(item => ({
         id: item,
         label: item,
-        status: workflowState.deliverableItems[item] || 'not-started',
+        status: deliverableItems[item] || 'not-started',
         requiresReview: true
       })) || []
     },
@@ -195,14 +243,30 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   const completedItems = checklistItems.filter(item => item.status === 'done').length;
   const progressPercentage = (completedItems / checklistItems.length) * 100;
 
-  const updateDeliverableStatus = (itemId: string, newStatus: 'not-started' | 'pending-review' | 'revisions-needed' | 'approved') => {
-    setWorkflowState(prev => ({
-      ...prev,
-      deliverableItems: {
-        ...prev.deliverableItems,
-        [itemId]: newStatus
-      }
-    }));
+  const updateDeliverableStatus = async (itemId: string, newStatus: 'not-started' | 'pending-review' | 'revisions-needed' | 'approved') => {
+    try {
+      const { error } = await supabase
+        .from('deliverable_status')
+        .upsert({
+          client_id: client.id,
+          deliverable_name: itemId,
+          status: newStatus
+        });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Status updated",
+        description: `Deliverable marked as ${newStatus.replace('-', ' ')}`,
+      });
+    } catch (error) {
+      console.error('Error updating deliverable status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update deliverable status",
+        variant: "destructive"
+      });
+    }
   };
 
   const toggleManualItem = (itemId: string) => {

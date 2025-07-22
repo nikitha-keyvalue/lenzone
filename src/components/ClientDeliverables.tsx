@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Gift, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Client {
   id: string;
@@ -24,43 +26,61 @@ interface ClientDeliverablesProps {
 
 interface DeliverableItem {
   id: string;
-  label: string;
+  client_id: string;
+  deliverable_name: string;
   status: 'not-started' | 'pending-review' | 'revisions-needed' | 'approved';
+  created_at: string;
+  updated_at: string;
 }
 
 export default function ClientDeliverables({ client }: ClientDeliverablesProps) {
   const [packageData, setPackageData] = useState<Package | null>(null);
-  
-  // Mock data for demonstration - in real app, this would come from the database
-  const [deliverableItems, setDeliverableItems] = useState<Record<string, 'not-started' | 'pending-review' | 'revisions-needed' | 'approved'>>({});
+  const [deliverableItems, setDeliverableItems] = useState<DeliverableItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Fetch package data and deliverable status
-    // This is mock implementation - replace with actual API calls
-    if (client.package_id) {
-      setPackageData({
-        id: client.package_id,
-        name: 'Premium Wedding Package',
-        deliverables: [
-          'Album Design Ready',
-          'Laminated Frame(s) Ready',
-          'Picstory Created (30s)',
-          'Reel Videos Edited (2 x 30s)',
-          'Highlight Video Ready (3–5 min)',
-          'Full Video Ready',
-          'Calendar Designed',
-          'Raw Files Shared'
-        ]
-      });
+    fetchDeliverableStatus();
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('deliverable-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'deliverable_status',
+          filter: `client_id=eq.${client.id}`
+        },
+        () => {
+          fetchDeliverableStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [client.id]);
+
+  const fetchDeliverableStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('deliverable_status')
+        .select('*')
+        .eq('client_id', client.id)
+        .in('status', ['pending-review', 'approved']);
+
+      if (error) throw error;
       
-      // Mock some submitted deliverables
-      setDeliverableItems({
-        'Album Design Ready': 'pending-review',
-        'Picstory Created (30s)': 'pending-review',
-        'Highlight Video Ready (3–5 min)': 'approved'
-      });
+      setDeliverableItems((data || []) as DeliverableItem[]);
+    } catch (error) {
+      console.error('Error fetching deliverable status:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [client]);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -71,21 +91,50 @@ export default function ClientDeliverables({ client }: ClientDeliverablesProps) 
     }
   };
 
-  const updateDeliverableStatus = (itemId: string, newStatus: 'approved') => {
-    setDeliverableItems(prev => ({
-      ...prev,
-      [itemId]: newStatus
-    }));
+  const updateDeliverableStatus = async (itemId: string, newStatus: 'approved') => {
+    try {
+      const { error } = await supabase
+        .from('deliverable_status')
+        .update({ status: newStatus })
+        .eq('client_id', client.id)
+        .eq('deliverable_name', itemId);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Deliverable approved!",
+        description: "Your photographer has been notified.",
+      });
+    } catch (error) {
+      console.error('Error updating deliverable status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve deliverable. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Only show deliverables that have been submitted by photographer (pending-review status or approved)
-  const submittedDeliverables: DeliverableItem[] = packageData?.deliverables
-    .filter(item => deliverableItems[item] === 'pending-review' || deliverableItems[item] === 'approved')
-    .map(item => ({
-      id: item,
-      label: item,
-      status: deliverableItems[item]
-    })) || [];
+  const submittedDeliverables = deliverableItems;
+
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Gift className="h-5 w-5" />
+            Your Deliverables
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <div className="animate-pulse">Loading deliverables...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (submittedDeliverables.length === 0) {
     return (
@@ -132,7 +181,7 @@ export default function ClientDeliverables({ client }: ClientDeliverablesProps) 
                 "font-medium",
                 item.status === 'approved' && "text-muted-foreground line-through"
               )}>
-                {item.label}
+                {item.deliverable_name}
               </span>
               <Badge 
                 variant={
@@ -151,7 +200,7 @@ export default function ClientDeliverables({ client }: ClientDeliverablesProps) 
               <Button
                 size="sm"
                 variant="default"
-                onClick={() => updateDeliverableStatus(item.id, 'approved')}
+                onClick={() => updateDeliverableStatus(item.deliverable_name, 'approved')}
                 className="gap-2"
               >
                 <CheckCircle className="h-4 w-4" />
