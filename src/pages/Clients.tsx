@@ -356,276 +356,310 @@ export default function Clients() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Controls */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Client Management</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name or contact..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+        {/* Enhanced Controls Section */}
+        <div className="mb-8 space-y-6">
+          {/* Search and Actions Bar */}
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full lg:w-auto">
+              {/* Enhanced Search */}
+              <div className="relative flex-1 group">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  placeholder="Search clients by name or contact..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-11 bg-background/50 border-border/50 focus:border-primary/50 focus:bg-background/80 transition-all duration-200 hover:border-border hover:bg-background/70"
+                />
+              </div>
+              
+              {/* Enhanced Filter */}
+              <div className="relative">
                 <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Payment Status" />
+                  <SelectTrigger className="w-[200px] h-11 bg-background/50 border-border/50 hover:border-border hover:bg-background/70 focus:border-primary/50 transition-all duration-200">
+                    <SelectValue placeholder="Filter by payment" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Payments</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="partial">Partial</SelectItem>
+                  <SelectContent className="bg-card border-border/50">
+                    <SelectItem value="all" className="hover:bg-accent/50">All Payments</SelectItem>
+                    <SelectItem value="paid" className="hover:bg-accent/50">Paid</SelectItem>
+                    <SelectItem value="unpaid" className="hover:bg-accent/50">Unpaid</SelectItem>
+                    <SelectItem value="partial" className="hover:bg-accent/50">Partial</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => {
+            {/* Enhanced Add Client Button */}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  onClick={() => {
                     setEditingClient(null);
                     setDialogOpen(true);
-                  }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Client
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Name *</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({...formData, name: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contact">Contact</Label>
-                        <Input
-                          id="contact"
-                          value={formData.contact}
-                          onChange={(e) => setFormData({...formData, contact: e.target.value})}
-                          placeholder="Email or phone"
-                        />
-                      </div>
-                    </div>
-                    
+                  }}
+                  className="h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 group"
+                >
+                  <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
+                  Add New Client
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        placeholder="Project details..."
+                      <Label htmlFor="name">Name *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        required
                       />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="event_type">Event Type</Label>
-                        <Select 
-                          value={formData.event_type} 
-                          onValueChange={(value) => setFormData({...formData, event_type: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select event type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="wedding">Wedding</SelectItem>
-                            <SelectItem value="portrait">Portrait</SelectItem>
-                            <SelectItem value="corporate">Corporate</SelectItem>
-                            <SelectItem value="event">Event</SelectItem>
-                            <SelectItem value="product">Product</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="event_date">Event Date</Label>
-                        <Input
-                          id="event_date"
-                          type="date"
-                          value={formData.event_date}
-                          onChange={(e) => setFormData({...formData, event_date: e.target.value})}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact">Contact</Label>
+                      <Input
+                        id="contact"
+                        value={formData.contact}
+                        onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                        placeholder="Email or phone"
+                      />
                     </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      placeholder="Project details..."
+                    />
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="due_date">Due Date</Label>
-                        <Input
-                          id="due_date"
-                          type="date"
-                          value={formData.due_date}
-                          onChange={(e) => setFormData({...formData, due_date: e.target.value})}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="package_id">Photography Package</Label>
-                        <Select 
-                          value={formData.package_id} 
-                          onValueChange={(value) => setFormData({...formData, package_id: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select package" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {packages.map((pkg) => (
-                              <SelectItem key={pkg.id} value={pkg.id}>
-                                {pkg.name} - ₹{pkg.price.toLocaleString()} ({pkg.max_edited_photos} photos)
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="event_type">Event Type</Label>
+                      <Select 
+                        value={formData.event_type} 
+                        onValueChange={(value) => setFormData({...formData, event_type: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="wedding">Wedding</SelectItem>
+                          <SelectItem value="portrait">Portrait</SelectItem>
+                          <SelectItem value="corporate">Corporate</SelectItem>
+                          <SelectItem value="event">Event</SelectItem>
+                          <SelectItem value="product">Product</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="event_date">Event Date</Label>
+                      <Input
+                        id="event_date"
+                        type="date"
+                        value={formData.event_date}
+                        onChange={(e) => setFormData({...formData, event_date: e.target.value})}
+                      />
+                    </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <Input
-                          id="location"
-                          value={formData.location}
-                          onChange={(e) => setFormData({...formData, location: e.target.value})}
-                          placeholder="Event location"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="payment_status">Payment Status</Label>
-                        <Select 
-                          value={formData.payment_status} 
-                          onValueChange={(value) => setFormData({...formData, payment_status: value as any})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unpaid">Unpaid</SelectItem>
-                            <SelectItem value="partial">Partial</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="due_date">Due Date</Label>
+                      <Input
+                        id="due_date"
+                        type="date"
+                        value={formData.due_date}
+                        onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="package_id">Photography Package</Label>
+                      <Select 
+                        value={formData.package_id} 
+                        onValueChange={(value) => setFormData({...formData, package_id: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select package" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {packages.map((pkg) => (
+                            <SelectItem key={pkg.id} value={pkg.id}>
+                              {pkg.name} - ₹{pkg.price.toLocaleString()} ({pkg.max_edited_photos} photos)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-                    <div className="flex justify-end space-x-2 pt-4">
-                      <Button type="button" variant="outline" onClick={handleCloseDialog}>
-                        Cancel
-                      </Button>
-                      <Button type="submit">
-                        {editingClient ? 'Update Client' : 'Add Client'}
-                      </Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        placeholder="Event location"
+                      />
                     </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardContent>
-        </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="payment_status">Payment Status</Label>
+                      <Select 
+                        value={formData.payment_status} 
+                        onValueChange={(value) => setFormData({...formData, payment_status: value as any})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unpaid">Unpaid</SelectItem>
+                          <SelectItem value="partial">Partial</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button type="button" variant="outline" onClick={handleCloseDialog}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      {editingClient ? 'Update Client' : 'Add Client'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
         {/* Clients Sections */}
         {(() => {
           const { upcoming, inProgress, completed } = categorizeClients(filteredClients);
           
           const renderClientSection = (sectionClients: Client[], title: string, badgeVariant: "default" | "secondary" | "destructive") => (
-            <Card className="mb-6">
+            <Card className="mb-6 border-border/50 bg-card/50 backdrop-blur-sm hover:bg-card/70 transition-all duration-300 shadow-lg hover:shadow-xl">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-3 text-lg">
+                  <div className="h-2 w-2 rounded-full bg-primary"></div>
                   {title}
-                  <Badge variant={badgeVariant}>{sectionClients.length}</Badge>
+                  <Badge variant={badgeVariant} className="ml-auto px-3 py-1 font-medium">
+                    {sectionClients.length}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Event Type</TableHead>
-                      <TableHead>Event Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead className="w-24">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sectionClients.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                          No clients in this section.
-                        </TableCell>
+                <div className="overflow-hidden rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border/50 bg-muted/30">
+                        <TableHead className="font-semibold">Name</TableHead>
+                        <TableHead className="font-semibold">Contact</TableHead>
+                        <TableHead className="font-semibold">Event Type</TableHead>
+                        <TableHead className="font-semibold">Event Date</TableHead>
+                        <TableHead className="font-semibold">Due Date</TableHead>
+                        <TableHead className="font-semibold">Payment</TableHead>
+                        <TableHead className="font-semibold">Location</TableHead>
+                        <TableHead className="w-32 font-semibold">Actions</TableHead>
                       </TableRow>
-                    ) : (
-                      sectionClients.map((client) => (
-                        <TableRow 
-                          key={client.id} 
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => navigate(`/client/${client.id}`)}
-                        >
-                          <TableCell className="font-medium">{client.name}</TableCell>
-                          <TableCell>{client.contact || '-'}</TableCell>
-                          <TableCell className="capitalize">{client.event_type || '-'}</TableCell>
-                          <TableCell>{formatDate(client.event_date)}</TableCell>
-                          <TableCell>{formatDate(client.due_date)}</TableCell>
-                          <TableCell>
-                            <Badge variant={getPaymentBadgeVariant(client.payment_status)}>
-                              {client.payment_status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{client.location || '-'}</TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => navigate(`/client/${client.id}`)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEdit(client)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDelete(client)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                    </TableHeader>
+                    <TableBody>
+                      {sectionClients.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                            <div className="flex flex-col items-center gap-3">
+                              <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+                                <Camera className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                              No clients in this section.
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        sectionClients.map((client) => (
+                          <TableRow 
+                            key={client.id} 
+                            className="cursor-pointer hover:bg-muted/30 transition-colors duration-200 border-border/30"
+                            onClick={() => navigate(`/client/${client.id}`)}
+                          >
+                            <TableCell className="font-medium py-4">{client.name}</TableCell>
+                            <TableCell className="py-4">{client.contact || '-'}</TableCell>
+                            <TableCell className="capitalize py-4">
+                              <Badge variant="outline" className="bg-background/50">
+                                {client.event_type || '-'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-4">{formatDate(client.event_date)}</TableCell>
+                            <TableCell className="py-4">{formatDate(client.due_date)}</TableCell>
+                            <TableCell className="py-4">
+                              <Badge variant={getPaymentBadgeVariant(client.payment_status)} className="font-medium">
+                                {client.payment_status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-4">{client.location || '-'}</TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()} className="py-4">
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => navigate(`/client/${client.id}`)}
+                                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleEdit(client)}
+                                  className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary transition-colors"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => handleDelete(client)}
+                                  className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           );
 
           if (filteredClients.length === 0) {
             return (
-              <Card>
-                <CardContent className="p-8 text-center text-muted-foreground">
-                  {clients.length === 0 ? "No clients yet. Add your first client!" : "No clients match your filters."}
+              <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-12 text-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center">
+                      <Camera className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">
+                        {clients.length === 0 ? "No clients yet" : "No matching clients"}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {clients.length === 0 ? "Add your first client to get started!" : "Try adjusting your search or filter criteria."}
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -633,9 +667,9 @@ export default function Clients() {
 
           return (
             <>
-              {renderClientSection(upcoming, "Upcoming Events", "default")}
-              {renderClientSection(inProgress, "Shoot in Progress", "secondary")}
-              {renderClientSection(completed, "Completed", "destructive")}
+              {upcoming.length > 0 && renderClientSection(upcoming, "Upcoming Events", "default")}
+              {inProgress.length > 0 && renderClientSection(inProgress, "Shoot in Progress", "secondary")}
+              {completed.length > 0 && renderClientSection(completed, "Completed", "destructive")}
             </>
           );
         })()}
