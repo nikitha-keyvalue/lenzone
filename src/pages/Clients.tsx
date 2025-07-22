@@ -12,7 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Plus, Search, LogOut, Camera, Eye, Edit, Trash2, CalendarIcon } from 'lucide-react';
+import { Plus, Search, LogOut, Camera, Eye, Edit, Trash2, CalendarIcon, ChevronDown, Filter } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -62,6 +63,7 @@ export default function Clients() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -639,19 +641,44 @@ export default function Clients() {
             </Dialog>
           </div>
 
-          {/* Comprehensive Filters */}
-          <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Filters</h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Clear All
-              </Button>
-            </div>
+          {/* Collapsible Comprehensive Filters */}
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-xl overflow-hidden">
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-between p-6 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    <span className="text-lg font-semibold">Advanced Filters</span>
+                    {Object.values(filters).some(value => 
+                      value !== 'all' && value !== '' && value !== null
+                    ) && (
+                      <Badge variant="secondary" className="ml-2">
+                        Active
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={cn(
+                    "h-5 w-5 transition-transform duration-200",
+                    filtersOpen && "rotate-180"
+                  )} />
+                </Button>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1">
+                <div className="px-6 pb-6 space-y-4 border-t border-border/50">
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Payment Status Filter */}
@@ -848,7 +875,10 @@ export default function Clients() {
                 </div>
               </div>
             </div>
-          </div>
+                </div>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         </div>
 
         {/* Clients Sections */}
