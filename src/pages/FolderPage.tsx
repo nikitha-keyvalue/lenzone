@@ -131,25 +131,22 @@ export default function FolderPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{getFolderTitle(folderType)}</CardTitle>
-              <div className="flex items-center space-x-3">
-                <Badge variant="secondary">{fileCount} files</Badge>
-                {!isShared && currentConfig && (
-                  <div className="relative">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*,video/*,application/pdf"
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      disabled={uploading}
-                    />
-                    <Button disabled={uploading} className="h-10 px-4">
-                      <Upload className="h-4 w-4 mr-2" />
-                      {uploading ? 'Uploading...' : currentConfig.uploadText}
-                    </Button>
-                  </div>
-                )}
-              </div>
+              {!isShared && currentConfig && (
+                <div className="relative">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*,application/pdf"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <Button disabled={uploading} className="h-10 px-4">
+                    <Upload className="h-4 w-4 mr-2" />
+                    {uploading ? 'Uploading...' : currentConfig.uploadText}
+                  </Button>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>
