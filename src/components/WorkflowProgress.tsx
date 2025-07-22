@@ -302,10 +302,10 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                     <item.icon className="h-4 w-4 text-muted-foreground" />
                     <span className={cn(
                       "font-medium",
-                      item.status === 'done' && "text-muted-foreground line-through"
+                      item.status === 'done' && "text-muted-foreground"
                     )}>
                       {item.label}
-                     </span>
+                    </span>
                   </div>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -327,7 +327,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                         <span className="text-sm">{getSubItemIcon(subItem.status)}</span>
                         <span className={cn(
                           "text-sm",
-                          subItem.status === 'approved' && "text-muted-foreground line-through"
+                          subItem.status === 'approved' && "text-muted-foreground"
                         )}>
                           {subItem.label}
                         </span>
@@ -374,7 +374,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                   <item.icon className="h-4 w-4 text-muted-foreground" />
                   <span className={cn(
                     "font-medium",
-                    item.status === 'done' && "text-muted-foreground line-through"
+                    item.status === 'done' && "text-muted-foreground"
                   )}>
                     {item.label}
                   </span>
