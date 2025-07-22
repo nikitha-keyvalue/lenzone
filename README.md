@@ -71,3 +71,9 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Boiler plate code
+The boiler plate code contains 
+ 1.Basic authentication flow
+ 2.Basic listing UI with supabase integration
+ 3.Basic client detail page skeleton
