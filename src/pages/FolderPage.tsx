@@ -131,7 +131,7 @@ export default function FolderPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{getFolderTitle(folderType)}</CardTitle>
-              {currentConfig && (
+              {currentConfig && folderType !== 'selected-photos' && (
                 <div className="relative">
                   <input
                     type="file"
