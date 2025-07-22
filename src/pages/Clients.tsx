@@ -81,6 +81,48 @@ export default function Clients() {
     }
   };
 
+  const categorizeClients = (clientsList: Client[]) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const upcoming: Client[] = [];
+    const inProgress: Client[] = [];
+    const completed: Client[] = [];
+
+    clientsList.forEach(client => {
+      if (!client.event_date) {
+        // Clients without event dates go to upcoming by default
+        upcoming.push(client);
+        return;
+      }
+
+      const eventDate = new Date(client.event_date);
+      eventDate.setHours(0, 0, 0, 0);
+      
+      const dueDate = client.due_date ? new Date(client.due_date) : null;
+      if (dueDate) dueDate.setHours(0, 0, 0, 0);
+
+      if (eventDate > today) {
+        // Future event dates
+        upcoming.push(client);
+      } else if (eventDate.getTime() === today.getTime()) {
+        // Today's events
+        inProgress.push(client);
+      } else {
+        // Past event dates
+        if (dueDate && dueDate >= today) {
+          // Event happened but work is still due
+          inProgress.push(client);
+        } else {
+          // Event happened and work is complete or overdue
+          completed.push(client);
+        }
+      }
+    });
+
+    return { upcoming, inProgress, completed };
+  };
+
   const filterClients = () => {
     let filtered = clients;
 
@@ -327,57 +369,87 @@ export default function Clients() {
           </CardContent>
         </Card>
 
-        {/* Clients Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Event Date</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredClients.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {clients.length === 0 ? "No clients yet. Add your first client!" : "No clients match your filters."}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredClients.map((client) => (
-                    <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-medium">{client.name}</TableCell>
-                      <TableCell>{client.contact || '-'}</TableCell>
-                      <TableCell>{formatDate(client.event_date)}</TableCell>
-                      <TableCell>{formatDate(client.due_date)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getPaymentBadgeVariant(client.payment_status)}>
-                          {client.payment_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{client.location || '-'}</TableCell>
-                      <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/client/${client.id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+        {/* Clients Sections */}
+        {(() => {
+          const { upcoming, inProgress, completed } = categorizeClients(filteredClients);
+          
+          const renderClientSection = (sectionClients: Client[], title: string, badgeVariant: "default" | "secondary" | "destructive") => (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {title}
+                  <Badge variant={badgeVariant}>{sectionClients.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Event Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {sectionClients.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          No clients in this section.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sectionClients.map((client) => (
+                        <TableRow key={client.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell className="font-medium">{client.name}</TableCell>
+                          <TableCell>{client.contact || '-'}</TableCell>
+                          <TableCell>{formatDate(client.event_date)}</TableCell>
+                          <TableCell>{formatDate(client.due_date)}</TableCell>
+                          <TableCell>
+                            <Badge variant={getPaymentBadgeVariant(client.payment_status)}>
+                              {client.payment_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{client.location || '-'}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => navigate(`/client/${client.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          );
+
+          if (filteredClients.length === 0) {
+            return (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  {clients.length === 0 ? "No clients yet. Add your first client!" : "No clients match your filters."}
+                </CardContent>
+              </Card>
+            );
+          }
+
+          return (
+            <>
+              {renderClientSection(upcoming, "Upcoming Events", "default")}
+              {renderClientSection(inProgress, "Shoot in Progress", "secondary")}
+              {renderClientSection(completed, "Completed", "destructive")}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
