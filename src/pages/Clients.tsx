@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
@@ -50,7 +51,8 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [deletingClient, setDeleteingClient] = useState<Client | null>(null);
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -268,16 +270,19 @@ export default function Clients() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (client: Client) => {
-    if (!confirm(`Are you sure you want to delete ${client.name}? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteClick = (client: Client) => {
+    setDeletingClient(client);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingClient) return;
 
     try {
       const { error } = await supabase
         .from('clients')
         .delete()
-        .eq('id', client.id);
+        .eq('id', deletingClient.id);
 
       if (error) throw error;
 
@@ -294,6 +299,9 @@ export default function Clients() {
         description: "Failed to delete client",
         variant: "destructive"
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingClient(null);
     }
   };
 
@@ -664,7 +672,7 @@ export default function Clients() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => handleDelete(client)}
+                                  onClick={() => handleDeleteClick(client)}
                                   className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -712,6 +720,28 @@ export default function Clients() {
           );
         })()}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{deletingClient?.name}</strong>? 
+              This action cannot be undone and will permanently remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Delete Client
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
