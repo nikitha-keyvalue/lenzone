@@ -22,7 +22,6 @@ interface FileItem {
 interface FolderViewProps {
   clientId: string;
   folderType: 'references' | 'all-photos' | 'selected-photos' | 'final-photos';
-  onBack: () => void;
 }
 
 const FOLDER_CONFIG = {
@@ -56,7 +55,7 @@ const FOLDER_CONFIG = {
   }
 };
 
-export default function FolderView({ clientId, folderType, onBack }: FolderViewProps) {
+export default function FolderView({ clientId, folderType }: FolderViewProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [clientPackage, setClientPackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -421,11 +420,6 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="h-6 w-px bg-border"></div>
           <Icon className="h-6 w-6 text-primary" />
           <div>
             <h2 className="text-xl font-bold">{config.title}</h2>
