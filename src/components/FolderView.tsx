@@ -22,6 +22,7 @@ interface FileItem {
 interface FolderViewProps {
   clientId: string;
   folderType: 'references' | 'all-photos' | 'selected-photos' | 'final-photos';
+  refreshTrigger?: number;
 }
 
 const FOLDER_CONFIG = {
@@ -55,11 +56,10 @@ const FOLDER_CONFIG = {
   }
 };
 
-export default function FolderView({ clientId, folderType }: FolderViewProps) {
+export default function FolderView({ clientId, folderType, refreshTrigger }: FolderViewProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [clientPackage, setClientPackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [approving, setApproving] = useState(false);
   const [commentsPanelOpen, setCommentsPanelOpen] = useState(false);
@@ -74,7 +74,7 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
   useEffect(() => {
     fetchFiles();
     fetchClientPackage();
-  }, [clientId, folderType]);
+  }, [clientId, folderType, refreshTrigger]);
 
   const getImageUrl = async (fileName: string): Promise<string> => {
     try {
@@ -171,44 +171,6 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    
-    try {
-      for (const file of files) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `${clientId}/${fileName}`;
-
-        const { error } = await supabase.storage
-          .from(config.bucket)
-          .upload(filePath, file);
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: `${files.length} file(s) uploaded successfully`
-      });
-      
-      fetchFiles();
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to upload files",
-        variant: "destructive"
-      });
-    } finally {
-      setUploading(false);
-      // Reset input
-      event.target.value = '';
-    }
-  };
 
   const handleDownload = async (fileName: string) => {
     try {
@@ -417,8 +379,7 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
 
   return (
     <div className="space-y-6">
-        <div className="flex items-center justify-between"
-        >
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{files.length} files</Badge>
           {(folderType === 'all-photos' || folderType === 'selected-photos') && selectedFiles.size > 0 && !isShared && (
@@ -435,22 +396,6 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
               }
             </Button>
           )}
-          {!isShared && (
-            <div className="relative">
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*,application/pdf"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={uploading}
-              />
-              <Button disabled={uploading}>
-                <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploading...' : config.uploadText}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -463,20 +408,9 @@ export default function FolderView({ clientId, folderType }: FolderViewProps) {
             <p className="text-muted-foreground mb-4">
               {config.description}
             </p>
-            <div className="relative inline-block">
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*,application/pdf"
-                onChange={handleFileUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={uploading}
-              />
-              <Button variant="outline" disabled={uploading}>
-                <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploading...' : config.uploadText}
-              </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Use the upload button in the header to add files.
+            </p>
           </CardContent>
         </Card>
       ) : (
