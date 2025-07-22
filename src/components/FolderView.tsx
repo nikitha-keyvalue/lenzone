@@ -384,7 +384,7 @@ export default function FolderView({ clientId, folderType, refreshTrigger, onFil
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{files.length} files</Badge>
-          {(folderType === 'all-photos' || folderType === 'selected-photos') && selectedFiles.size > 0 && !isShared && (
+          {(folderType === 'all-photos' || folderType === 'selected-photos') && selectedFiles.size > 0 && (
             <Button 
               onClick={handleApproveSelected}
               disabled={approving}
@@ -435,7 +435,7 @@ export default function FolderView({ clientId, folderType, refreshTrigger, onFil
                 )}
                 
                 {/* Selection checkbox for all-photos and selected-photos */}
-                {(folderType === 'all-photos' || folderType === 'selected-photos') && !isShared && (
+                {(folderType === 'all-photos' || folderType === 'selected-photos') && (
                   <div className="absolute top-2 left-2 z-10">
                     <Checkbox
                       checked={selectedFiles.has(file.name)}
