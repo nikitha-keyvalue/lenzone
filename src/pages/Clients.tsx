@@ -24,11 +24,22 @@ interface Client {
   location: string | null;
   contact: string | null;
   event_type: string | null;
+  package_id: string | null;
   created_at: string;
+}
+
+interface Package {
+  id: string;
+  name: string;
+  price: number;
+  max_edited_photos: number;
+  includes: string[];
+  deliverables: string[];
 }
 
 export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -49,7 +60,8 @@ export default function Clients() {
     payment_status: 'unpaid' as const,
     location: '',
     contact: '',
-    event_type: ''
+    event_type: '',
+    package_id: ''
   });
 
   useEffect(() => {
@@ -58,6 +70,7 @@ export default function Clients() {
       return;
     }
     fetchClients();
+    fetchPackages();
   }, [user, navigate]);
 
   useEffect(() => {
@@ -68,7 +81,15 @@ export default function Clients() {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          packages (
+            id,
+            name,
+            price,
+            max_edited_photos
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -82,6 +103,25 @@ export default function Clients() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPackages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .order('price', { ascending: true });
+
+      if (error) throw error;
+      setPackages(data || []);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch packages",
+        variant: "destructive"
+      });
     }
   };
 
@@ -161,7 +201,8 @@ export default function Clients() {
             description: formData.description || null,
             location: formData.location || null,
             contact: formData.contact || null,
-            event_type: formData.event_type || null
+            event_type: formData.event_type || null,
+            package_id: formData.package_id || null
           })
           .eq('id', editingClient.id);
 
@@ -183,7 +224,8 @@ export default function Clients() {
             description: formData.description || null,
             location: formData.location || null,
             contact: formData.contact || null,
-            event_type: formData.event_type || null
+            event_type: formData.event_type || null,
+            package_id: formData.package_id || null
           }]);
 
         if (error) throw error;
@@ -216,7 +258,8 @@ export default function Clients() {
       payment_status: client.payment_status as any,
       location: client.location || '',
       contact: client.contact || '',
-      event_type: client.event_type || ''
+      event_type: client.event_type || '',
+      package_id: client.package_id || ''
     });
     setDialogOpen(true);
   };
@@ -261,7 +304,8 @@ export default function Clients() {
       payment_status: 'unpaid',
       location: '',
       contact: '',
-      event_type: ''
+      event_type: '',
+      package_id: ''
     });
   };
 
@@ -425,6 +469,24 @@ export default function Clients() {
                           value={formData.due_date}
                           onChange={(e) => setFormData({...formData, due_date: e.target.value})}
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="package_id">Photography Package</Label>
+                        <Select 
+                          value={formData.package_id} 
+                          onValueChange={(value) => setFormData({...formData, package_id: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select package" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {packages.map((pkg) => (
+                              <SelectItem key={pkg.id} value={pkg.id}>
+                                {pkg.name} - ₹{pkg.price.toLocaleString()} ({pkg.max_edited_photos} photos)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 

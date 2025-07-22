@@ -58,6 +58,7 @@ const FOLDER_CONFIG = {
 
 export default function FolderView({ clientId, folderType, onBack }: FolderViewProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
+  const [clientPackage, setClientPackage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -73,6 +74,7 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
   useEffect(() => {
     fetchFiles();
+    fetchClientPackage();
   }, [clientId, folderType]);
 
   const getImageUrl = async (fileName: string): Promise<string> => {
@@ -86,6 +88,28 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
     } catch (error) {
       console.error('Error creating signed URL:', error);
       return '';
+    }
+  };
+
+  const fetchClientPackage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select(`
+          package_id,
+          packages (
+            id,
+            name,
+            max_edited_photos
+          )
+        `)
+        .eq('id', clientId)
+        .single();
+
+      if (error) throw error;
+      setClientPackage(data);
+    } catch (error) {
+      console.error('Error fetching client package:', error);
     }
   };
 
@@ -257,7 +281,20 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
   const handleFileSelection = (fileName: string, checked: boolean) => {
     const newSelection = new Set(selectedFiles);
+    
     if (checked) {
+      // Check package limits for selected-photos folder
+      if (folderType === 'selected-photos' && clientPackage?.packages) {
+        const maxPhotos = clientPackage.packages.max_edited_photos;
+        if (newSelection.size >= maxPhotos) {
+          toast({
+            title: "Package Limit Reached",
+            description: `Your ${clientPackage.packages.name} package allows only ${maxPhotos} edited photos.`,
+            variant: "destructive"
+          });
+          return;
+        }
+      }
       newSelection.add(fileName);
     } else {
       newSelection.delete(fileName);
@@ -267,6 +304,32 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
   const handleApproveSelected = async () => {
     if (selectedFiles.size === 0) return;
+
+    // Additional package limit check for moving from all-photos to selected-photos
+    if (folderType === 'all-photos' && clientPackage?.packages) {
+      const maxPhotos = clientPackage.packages.max_edited_photos;
+      
+      // Check current count in selected-photos folder
+      try {
+        const { data: selectedPhotos, error } = await supabase.storage
+          .from('client-selected-photos')
+          .list(clientId, { limit: 100 });
+
+        if (!error && selectedPhotos) {
+          const currentSelectedCount = selectedPhotos.length;
+          if (currentSelectedCount + selectedFiles.size > maxPhotos) {
+            toast({
+              title: "Package Limit Exceeded",
+              description: `Your ${clientPackage.packages.name} package allows only ${maxPhotos} edited photos. You currently have ${currentSelectedCount} selected photos.`,
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking selected photos count:', error);
+      }
+    }
 
     setApproving(true);
     try {

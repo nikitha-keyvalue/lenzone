@@ -25,6 +25,7 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          package_id: string | null
           payment_status: string
           photographer_id: string
           updated_at: string
@@ -39,6 +40,7 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          package_id?: string | null
           payment_status?: string
           photographer_id: string
           updated_at?: string
@@ -53,8 +55,50 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          package_id?: string | null
           payment_status?: string
           photographer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          created_at: string
+          deliverables: string[]
+          id: string
+          includes: string[]
+          max_edited_photos: number
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliverables?: string[]
+          id?: string
+          includes?: string[]
+          max_edited_photos: number
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliverables?: string[]
+          id?: string
+          includes?: string[]
+          max_edited_photos?: number
+          name?: string
+          price?: number
           updated_at?: string
         }
         Relationships: []
