@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import FolderGrid from '@/components/FolderGrid';
 import FolderView from '@/components/FolderView';
+import WorkflowProgress from '@/components/WorkflowProgress';
 
 interface Client {
   id: string;
@@ -19,6 +20,7 @@ interface Client {
   location: string | null;
   contact: string | null;
   created_at: string;
+  package_id: string | null;
 }
 
 export default function ClientDetail() {
@@ -207,6 +209,11 @@ export default function ClientDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Workflow Progress */}
+        <div className="mb-6">
+          <WorkflowProgress client={client} isShared={isShared} />
+        </div>
 
         {/* Project Files */}
         <Card>
