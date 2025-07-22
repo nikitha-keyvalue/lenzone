@@ -65,6 +65,8 @@ export type Database = {
           created_at: string
           id: string
           photo_path: string
+          resolved_at: string | null
+          resolved_by: string | null
           updated_at: string
         }
         Insert: {
@@ -75,6 +77,8 @@ export type Database = {
           created_at?: string
           id?: string
           photo_path: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           updated_at?: string
         }
         Update: {
@@ -85,6 +89,8 @@ export type Database = {
           created_at?: string
           id?: string
           photo_path?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
           updated_at?: string
         }
         Relationships: []

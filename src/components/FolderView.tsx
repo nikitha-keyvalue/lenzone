@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Upload, File, Image as ImageIcon, Download, Trash2, Check, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Upload, File, Image as ImageIcon, Download, Trash2, Check, MessageCircle, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSearchParams } from 'react-router-dom';
@@ -16,6 +16,7 @@ interface FileItem {
   updated_at: string;
   metadata: any;
   imageUrl?: string;
+  commentStatus?: 'none' | 'has-comments' | 'resolved';
 }
 
 interface FolderViewProps {
@@ -98,16 +99,31 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
 
       if (error) throw error;
       
-      // Get signed URLs for all image files
+      // Get signed URLs and comment status for all files
       const filesWithUrls = await Promise.all(
         (data || []).map(async (file) => {
           let imageUrl = '';
           if (isImageFile(file.name)) {
             imageUrl = await getImageUrl(file.name);
           }
+
+          // Check comment status
+          const { data: comments } = await supabase
+            .from('photo_comments')
+            .select('resolved_at')
+            .eq('client_id', clientId)
+            .eq('photo_path', `${clientId}/${file.name}`);
+
+          let commentStatus: 'none' | 'has-comments' | 'resolved' = 'none';
+          if (comments && comments.length > 0) {
+            const hasUnresolved = comments.some(c => !c.resolved_at);
+            commentStatus = hasUnresolved ? 'has-comments' : 'resolved';
+          }
+
           return {
             ...file,
-            imageUrl
+            imageUrl,
+            commentStatus
           };
         })
       );
@@ -301,6 +317,10 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
     setSelectedPhotoForComments('');
   };
 
+  const handlePhotoReplaced = () => {
+    fetchFiles(); // Refresh the file list to update comment status
+  };
+
   if (loading) {
     return (
       <div className="p-8 text-center">
@@ -386,8 +406,22 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {files.map((file) => (
-            <Card key={file.id} className="hover:shadow-md transition-shadow relative group">
+            <Card key={file.id} className={`hover:shadow-md transition-shadow relative group ${
+              file.commentStatus === 'has-comments' ? 'border-orange-200 bg-orange-50' : 
+              file.commentStatus === 'resolved' ? 'border-green-200 bg-green-50' : ''
+            }`}>
               <CardContent className="p-4">
+                {/* Comment status indicator */}
+                {file.commentStatus !== 'none' && (
+                  <div className="absolute top-2 right-2 z-10">
+                    {file.commentStatus === 'has-comments' ? (
+                      <AlertCircle className="h-5 w-5 text-orange-600" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    )}
+                  </div>
+                )}
+                
                 {/* Selection checkbox for all-photos */}
                 {folderType === 'all-photos' && !isShared && (
                   <div className="absolute top-2 left-2 z-10">
@@ -504,6 +538,7 @@ export default function FolderView({ clientId, folderType, onBack }: FolderViewP
         clientId={clientId}
         photoPath={selectedPhotoForComments}
         photoName={selectedPhotoForComments.split('/').pop() || ''}
+        onPhotoReplaced={handlePhotoReplaced}
       />
     </div>
   );

@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Send, MessageCircle } from 'lucide-react';
+import { X, Send, MessageCircle, Upload, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Comment {
   id: string;
@@ -13,6 +14,8 @@ interface Comment {
   commenter_name: string | null;
   commenter_email: string | null;
   created_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
 }
 
 interface PhotoCommentsPanelProps {
@@ -21,6 +24,7 @@ interface PhotoCommentsPanelProps {
   clientId: string;
   photoPath: string;
   photoName: string;
+  onPhotoReplaced?: () => void;
 }
 
 export default function PhotoCommentsPanel({ 
@@ -28,7 +32,8 @@ export default function PhotoCommentsPanel({
   onClose, 
   clientId, 
   photoPath, 
-  photoName 
+  photoName,
+  onPhotoReplaced
 }: PhotoCommentsPanelProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -36,7 +41,10 @@ export default function PhotoCommentsPanel({
   const [commenterEmail, setCommenterEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resolving, setResolving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -104,6 +112,65 @@ export default function PhotoCommentsPanel({
     }
   };
 
+  const handleResolveWithUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    setResolving(true);
+    try {
+      // Upload the new file to replace the existing one
+      const { error: uploadError } = await supabase.storage
+        .from('client-all-photos')
+        .upload(`${clientId}/${file.name}`, file, {
+          upsert: true // This will replace if file exists
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Mark comments as resolved
+      const { error: resolveError } = await supabase
+        .from('photo_comments')
+        .update({
+          resolved_at: new Date().toISOString(),
+          resolved_by: user.id
+        })
+        .eq('client_id', clientId)
+        .eq('photo_path', photoPath)
+        .is('resolved_at', null);
+
+      if (resolveError) throw resolveError;
+
+      toast({
+        title: "Success",
+        description: "Photo replaced and comments resolved. Client has been notified."
+      });
+
+      fetchComments();
+      onPhotoReplaced?.();
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error resolving comments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to resolve comments",
+        variant: "destructive"
+      });
+    } finally {
+      setResolving(false);
+    }
+  };
+
+  const hasUnresolvedComments = comments.some(comment => !comment.resolved_at);
+  const isPhotographer = user && comments.length > 0; // Simple check - can be enhanced
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -145,17 +212,27 @@ export default function PhotoCommentsPanel({
           </div>
         ) : (
           comments.map((comment) => (
-            <Card key={comment.id}>
+            <Card key={comment.id} className={comment.resolved_at ? "border-green-200 bg-green-50" : ""}>
               <CardContent className="p-3">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-medium">
-                    {comment.commenter_name || 'Anonymous'}
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium">
+                      {comment.commenter_name || 'Anonymous'}
+                    </p>
+                    {comment.resolved_at && (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {formatDate(comment.created_at)}
                   </p>
                 </div>
                 <p className="text-sm">{comment.comment}</p>
+                {comment.resolved_at && (
+                  <p className="text-xs text-green-600 mt-2">
+                    Resolved on {formatDate(comment.resolved_at)}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))
@@ -163,6 +240,27 @@ export default function PhotoCommentsPanel({
       </div>
 
       <div className="p-4 border-t space-y-3">
+        {isPhotographer && hasUnresolvedComments && (
+          <div className="mb-4">
+            <Button 
+              onClick={handleResolveWithUpload}
+              disabled={resolving}
+              className="w-full"
+              variant="outline"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {resolving ? 'Resolving...' : 'Resolve with New Photo'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </div>
+        )}
+        
         <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="Your name (optional)"
