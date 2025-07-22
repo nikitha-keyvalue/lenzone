@@ -33,7 +33,6 @@ interface ChecklistItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   status: 'pending' | 'in-progress' | 'done';
-  autoChecked?: boolean;
   tooltip?: string;
   subItems?: SubItem[];
 }
@@ -52,9 +51,12 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   const [finalPhotosCount, setFinalPhotosCount] = useState(0);
   const { toast } = useToast();
 
-  // Mock data for demonstration - in real app, this would come from the database
+  // Track manual completion status for all workflow items
   const [workflowState, setWorkflowState] = useState({
+    coverageCompleted: false,
+    selectionCompleted: false,
     editingManuallyDone: false,
+    reviewCompleted: false,
     finalDeliveryDone: false,
   });
 
@@ -147,19 +149,6 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
     }
   };
 
-  const isEventCompleted = () => {
-    if (!client.event_date) return false;
-    return new Date() > new Date(client.event_date);
-  };
-
-  const isSelectionCompleted = () => {
-    return selectedPhotosCount > 0;
-  };
-
-  const isEditingCompleted = () => {
-    return finalPhotosCount > 0 || workflowState.editingManuallyDone;
-  };
-
   const areDeliverablesReady = () => {
     if (!packageData) return false;
     return packageData.deliverables.every(item => 
@@ -177,35 +166,32 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
       label: 'Package Confirmation',
       icon: Package,
       status: client.package_id ? 'done' : 'pending',
-      autoChecked: true,
-      tooltip: 'Auto-checked when package is selected'
+      tooltip: 'Package selection status'
     },
     {
       id: 'coverage',
       label: 'Event Coverage Completed',
       icon: Calendar,
-      status: isEventCompleted() ? 'done' : 'pending',
-      autoChecked: true,
-      tooltip: 'Auto-checked when event date has passed'
+      status: workflowState.coverageCompleted ? 'done' : 'pending',
+      tooltip: 'Mark as done when event coverage is completed'
     },
     {
       id: 'selection',
       label: 'Client Photo Selection',
       icon: Camera,
-      status: isSelectionCompleted() ? 'done' : 'pending',
-      autoChecked: true,
-      tooltip: 'Auto-checked when photos are selected'
+      status: workflowState.selectionCompleted ? 'done' : 'pending',
+      tooltip: 'Mark as done when client photo selection is completed'
     },
     {
       id: 'editing',
       label: 'Editing & Post-Production',
       icon: Edit,
-      status: isEditingCompleted() ? 'done' : 'pending',
-      tooltip: 'Auto-checked when final photos match selected photos or manually marked done'
+      status: workflowState.editingManuallyDone ? 'done' : 'pending',
+      tooltip: 'Mark as done when editing and post-production is completed'
     },
     {
       id: 'deliverables',
-      label: 'Deliverables Ready',
+      label: 'Final Deliverables Ready',
       icon: Gift,
       status: areDeliverablesReady() ? 'done' : 'pending',
       tooltip: 'Completed when all sub-items are approved',
@@ -220,23 +206,22 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
       id: 'review',
       label: 'Client Review & Feedback',
       icon: MessageSquare,
-      status: 'pending', // This would be calculated based on review states
-      tooltip: 'Completed when all deliverables are client-approved'
+      status: workflowState.reviewCompleted ? 'done' : 'pending',
+      tooltip: 'Mark as done when client review and feedback is completed'
     },
     {
       id: 'delivery',
       label: 'Final Delivery Completed',
       icon: Truck,
       status: workflowState.finalDeliveryDone ? 'done' : 'pending',
-      tooltip: 'Manually marked as done by photographer'
+      tooltip: 'Mark as done when final delivery is completed'
     },
     {
       id: 'payment',
       label: 'Payment Closed',
       icon: CreditCard,
       status: isPaymentCompleted() ? 'done' : 'pending',
-      autoChecked: true,
-      tooltip: 'Auto-checked when payment status is 100%'
+      tooltip: 'Payment completion status'
     }
   ];
 
@@ -270,17 +255,22 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
   };
 
   const toggleManualItem = (itemId: string) => {
-    if (itemId === 'editing') {
-      setWorkflowState(prev => ({
-        ...prev,
-        editingManuallyDone: !prev.editingManuallyDone
-      }));
-    } else if (itemId === 'delivery') {
-      setWorkflowState(prev => ({
-        ...prev,
-        finalDeliveryDone: !prev.finalDeliveryDone
-      }));
-    }
+    setWorkflowState(prev => {
+      switch (itemId) {
+        case 'coverage':
+          return { ...prev, coverageCompleted: !prev.coverageCompleted };
+        case 'selection':
+          return { ...prev, selectionCompleted: !prev.selectionCompleted };
+        case 'editing':
+          return { ...prev, editingManuallyDone: !prev.editingManuallyDone };
+        case 'review':
+          return { ...prev, reviewCompleted: !prev.reviewCompleted };
+        case 'delivery':
+          return { ...prev, finalDeliveryDone: !prev.finalDeliveryDone };
+        default:
+          return prev;
+      }
+    });
   };
 
   return (
@@ -315,10 +305,7 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                       item.status === 'done' && "text-muted-foreground line-through"
                     )}>
                       {item.label}
-                    </span>
-                    {item.autoChecked && (
-                      <Badge variant="secondary" className="text-xs">Auto</Badge>
-                    )}
+                     </span>
                   </div>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -391,12 +378,9 @@ export default function WorkflowProgress({ client, isShared = false }: WorkflowP
                   )}>
                     {item.label}
                   </span>
-                  {item.autoChecked && (
-                    <Badge variant="secondary" className="text-xs">Auto</Badge>
-                  )}
                 </div>
                 
-                {!isShared && !item.autoChecked && ['editing', 'delivery'].includes(item.id) && (
+                {!isShared && !['package', 'payment', 'deliverables'].includes(item.id) && (
                   <Button
                     size="sm"
                     variant={item.status === 'done' ? 'default' : 'outline'}
